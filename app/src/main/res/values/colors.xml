@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Basic Colors -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="gray_light">#F5F5F5</color>
+    <color name="gray_dark">#666666</color>
+
+    <!-- Primary Colors -->
+    <color name="primary">#6200EE</color> <!-- Material Purple -->
+    <color name="primary_variant">#3700B3</color>
+    <color name="secondary">#03DAC5</color> <!-- Material Teal -->
+
+    <!-- Google Button Colors -->
+    <color name="google_button_bg">#FFFFFF</color>
+    <color name="google_button_text">#000000</color>
+    <color name="google_button_border">#DDDDDD</color>
+
+    <!-- Appointment Card Colors -->
+    <color name="appointment_card_bg">#FFFFFF</color>
+    <color name="appointment_card_border">#DDDDDD</color>
+    <color name="appointment_card_text">#333333</color>
+
+    <!-- Floating Action Button Colors -->
+    <color name="fab_bg">#6200EE</color> <!-- Material Purple -->
+    <color name="fab_icon">#FFFFFF</color>
+</resources>
