@@ -7,7 +7,7 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.avichai98.smartreminder.R
-import com.avichai98.smartreminder.utils.Appointment
+import com.avichai98.smartreminder.models.Appointment
 
 class AppointmentAdapter(
     private val appointments: MutableList<Appointment>,

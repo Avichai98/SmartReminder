@@ -1,4 +1,4 @@
-package com.avichai98.smartreminder.utils
+package com.avichai98.smartreminder.models
 
 import java.util.UUID
 

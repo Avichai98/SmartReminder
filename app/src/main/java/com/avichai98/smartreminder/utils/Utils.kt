@@ -1,8 +1,9 @@
 package com.avichai98.smartreminder.utils
 
-import GoogleCalendarApi
+import com.avichai98.smartreminder.interfaces.GoogleCalendarApi
 import android.content.ContentValues.TAG
 import android.util.Log
+import com.avichai98.smartreminder.models.Appointment
 import com.avichai98.smartreminder.models.GoogleCalendarEventRequest
 import com.avichai98.smartreminder.models.TimeObject
 import com.google.gson.Gson

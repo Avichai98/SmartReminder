@@ -81,4 +81,6 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
     implementation("com.google.firebase:firebase-analytics")
 
+    implementation("com.sun.mail:android-mail:1.6.7") // Jakarta Mail for Android
+    implementation("com.sun.mail:android-activation:1.6.7") // Activation framework
 }

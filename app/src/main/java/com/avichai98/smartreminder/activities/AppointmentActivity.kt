@@ -1,22 +1,29 @@
 package com.avichai98.smartreminder.activities
 
-import GoogleCalendarApi
+import com.avichai98.smartreminder.interfaces.GoogleCalendarApi
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.Button
 import android.widget.EditText
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.avichai98.smartreminder.R
 import com.avichai98.smartreminder.adapters.AppointmentAdapter
 import com.avichai98.smartreminder.databinding.ActivityAppointmentBinding
 import com.avichai98.smartreminder.models.GoogleCalendar
-import com.avichai98.smartreminder.utils.Appointment
+import com.avichai98.smartreminder.models.Appointment
+import com.avichai98.smartreminder.utils.PermissionManager
 import com.avichai98.smartreminder.utils.Utils
 import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -32,7 +39,7 @@ import java.util.*
 class AppointmentActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAppointmentBinding
-
+    private lateinit var permissionManager: PermissionManager
     private val appointments = mutableListOf<Appointment>()
     private val utils = Utils()
     private lateinit var adapter: AppointmentAdapter
@@ -81,8 +88,37 @@ class AppointmentActivity : AppCompatActivity() {
             }
         }
 
+        binding.btnCreateCalendar.setOnClickListener {
+            showCreateCalendarDialog()
+        }
+
         binding.btnSelectCalendar.setOnClickListener {
             fetchCalendarList()
+        }
+
+        binding.btnSettings.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    1001
+                )
+            }
+        }
+    }
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.all { it.value }
+        if (allGranted) {
+            // Permission granted
+        } else {
+            permissionManager.openAppSettings()
         }
     }
 
@@ -100,6 +136,47 @@ class AppointmentActivity : AppCompatActivity() {
                 Log.e(TAG, "Error getting access token: ${e.localizedMessage}")
                 null
             }
+        }
+    }
+
+    private fun showCreateCalendarDialog() {
+        val input = EditText(this)
+        input.hint = "Enter calendar name"
+
+        AlertDialog.Builder(this)
+            .setTitle("New Calendar")
+            .setView(input)
+            .setPositiveButton("Create") { _, _ ->
+                val name = input.text.toString()
+                if (name.isNotBlank()) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val accessToken = fetchAccessToken()
+                        accessToken?.let {
+                            createNewCalendar(name, it)
+                            fetchCalendarList()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private suspend fun createNewCalendar(name: String, accessToken: String) {
+        try {
+            val retrofit = Retrofit.Builder()
+                .baseUrl("https://www.googleapis.com/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+            val calendarApi = retrofit.create(GoogleCalendarApi::class.java)
+            val newCalendar = mapOf(
+                "summary" to name,
+                "timeZone" to TimeZone.getDefault().id
+            )
+            val response = calendarApi.createCalendar("Bearer $accessToken", newCalendar)
+            Log.d(TAG, "Calendar created: ${response.id}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create calendar: ${e.localizedMessage}")
         }
     }
 
