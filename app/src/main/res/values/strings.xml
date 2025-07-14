@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">SmartReminder</string>
     <string name="default_web_client_id">1035741323678-6vd8d1kp18rhgpaoelvl3jg2lpb50315.apps.googleusercontent.com</string>
+    <string name="settings">Settings</string>
+    <string name="save_settings">Save Settings</string>
+    <string name="e_g_24">e.g. 24</string>
+    <string name="hours_before_notification">Hours before notification:</string>
 </resources>

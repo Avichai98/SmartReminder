@@ -2,14 +2,18 @@ package com.avichai98.smartreminder.utils
 
 import com.avichai98.smartreminder.interfaces.GoogleCalendarApi
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.util.Log
 import com.avichai98.smartreminder.models.Appointment
 import com.avichai98.smartreminder.models.GoogleCalendarEventRequest
 import com.avichai98.smartreminder.models.TimeObject
+import com.google.android.gms.auth.GoogleAuthUtil
+import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
@@ -99,4 +103,22 @@ class Utils {
 
         return outputFormat.format(calendar.time)
     }
+
+    suspend fun fetchAccessToken(context: Context): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val account = GoogleSignIn.getLastSignedInAccount(context)
+                if (account != null) {
+                    val scope = "oauth2:https://www.googleapis.com/auth/calendar"
+                    account.account?.let { GoogleAuthUtil.getToken(context, it, scope) }
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting access token: ${e.localizedMessage}")
+                null
+            }
+        }
+    }
+
 }

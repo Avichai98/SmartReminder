@@ -6,27 +6,35 @@
     android:padding="24dp"
     android:orientation="vertical">
 
-    <TextView
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/tvNotificationLead"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Minutes before notification:"
+        android:text="@string/hours_before_notification"
         android:textSize="18sp"
         android:textStyle="bold" />
 
-    <EditText
-        android:id="@+id/etMinutesBefore"
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/etHoursBefore"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="e.g. 10"
+        android:hint="@string/e_g_24"
         android:inputType="number" />
 
-    <Button
+    <ListView
+        android:id="@+id/calendarListView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:choiceMode="multipleChoice"
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="1dp" />
+
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveSettings"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Save Settings"
+        android:text="@string/save_settings"
         android:layout_marginTop="16dp"
-        android:backgroundTint="@color/primary"
         android:textColor="@color/white" />
 </LinearLayout>

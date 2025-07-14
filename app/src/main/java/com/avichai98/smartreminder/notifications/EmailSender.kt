@@ -9,10 +9,10 @@ import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 
 class EmailSender(
-    private val smtpHost: String,
-    private val smtpPort: String,
-    private val username: String,
-    private val password: String
+    private val smtpHost: String = "smtp.gmail.com",
+    private val smtpPort: String = "587",
+    private val username: String = "smart.reminder98@gmail.com",
+    private val password: String = "sugvhcuypivqbwkn"
 ) {
     companion object {
         private const val TAG = "EmailSender"

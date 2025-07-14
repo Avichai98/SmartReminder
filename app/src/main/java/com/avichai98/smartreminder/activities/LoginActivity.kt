@@ -12,6 +12,8 @@ import androidx.credentials.*
 import androidx.credentials.exceptions.GetCredentialException
 import com.avichai98.smartreminder.R
 import com.avichai98.smartreminder.databinding.ActivityLoginBinding
+import com.avichai98.smartreminder.models.User
+import com.avichai98.smartreminder.utils.MyRealtimeFirebase
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -114,17 +116,39 @@ class LoginActivity : AppCompatActivity() {
         firebaseAuth.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    val user = firebaseAuth.currentUser
-                    Toast.makeText(this, "Signed in as: ${user?.displayName}", Toast.LENGTH_SHORT).show()
-                    Log.d(TAG, "Sign-in success: ${user?.displayName}")
 
-                    // Navigate to the appointment activity
-                    startActivity(Intent(this, AppointmentActivity::class.java))
-                    finish()
+                    val firebaseUser = FirebaseAuth.getInstance().currentUser
+                    val email = firebaseUser?.email ?: firebaseUser?.providerData
+                        ?.firstOrNull { it.email != null }?.email
 
-                } else {
-                    Toast.makeText(this, "Authentication failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
-                    Log.e(TAG, "Authentication failed: ${task.exception?.message}")
+                    if (firebaseUser != null && email != null) {
+                        val user = User(firebaseUser.uid, email)
+                        MyRealtimeFirebase.init(user)
+
+                        Toast.makeText(
+                            this,
+                            "Signed in as: ${firebaseUser.displayName}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        Log.d(TAG, "Sign-in success: ${firebaseUser.displayName}")
+
+                        val db = MyRealtimeFirebase.getInstance()
+                        db.userExists { exists ->
+                            if (!exists) {
+                                db.saveUser()
+                            }
+                        }
+
+                        startActivity(Intent(this, AppointmentActivity::class.java))
+                        finish()
+                    } else {
+                        Toast.makeText(
+                            this,
+                            "Login failed. User or email is null",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        Log.e(TAG, "firebaseUser or email is null: $firebaseUser")
+                    }
                 }
             }
     }

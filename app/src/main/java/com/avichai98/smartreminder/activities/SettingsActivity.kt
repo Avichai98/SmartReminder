@@ -1,28 +1,116 @@
 package com.avichai98.smartreminder.activities
 
 import android.os.Bundle
+import android.util.Log
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.edit
 import com.avichai98.smartreminder.databinding.ActivitySettingsBinding
+import com.avichai98.smartreminder.interfaces.GoogleCalendarApi
+import com.avichai98.smartreminder.models.CalendarItem
+import com.avichai98.smartreminder.utils.MyRealtimeFirebase
+import com.avichai98.smartreminder.utils.Utils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class SettingsActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivitySettingsBinding
+    private val calendarItems = mutableListOf<CalendarItem>()
+    private lateinit var adapter: ArrayAdapter<String>
+    private val utils = Utils()
+
+    // Store previously selected calendar IDs to mark selected checkboxes
+    private var previouslySelectedCalendars: Set<String> = emptySet()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // default
-        val prefs = getSharedPreferences("settings", MODE_PRIVATE)
-        val minutesBefore = prefs.getInt("reminderMinutes", 15)
-        binding.etMinutesBefore.setText(minutesBefore.toString())
+        // Setup the list view adapter
+        adapter = ArrayAdapter(this, android.R.layout.simple_list_item_multiple_choice)
+        binding.calendarListView.adapter = adapter
 
-        binding.btnSaveSettings.setOnClickListener {
-            val value = binding.etMinutesBefore.text.toString().toIntOrNull() ?: 15
-            prefs.edit { putInt("reminderMinutes", value) }
-            Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
+        // Load user preferences and calendars
+        loadSettings()
+        loadCalendars()
+
+        // Save button click
+        binding.btnSaveSettings.setOnClickListener { saveSettings() }
+    }
+
+    // Load minutesBefore and previously selected calendars from Firebase
+    private fun loadSettings() {
+        CoroutineScope(Dispatchers.Main).launch {
+            val (selectedCalendars, hoursBefore) =
+                MyRealtimeFirebase.getInstance().fetchUserPreferencesSuspend()
+            previouslySelectedCalendars = selectedCalendars.toSet()
+            binding.etHoursBefore.setText(hoursBefore.toString())
         }
+    }
+
+    // Load available calendars from Google Calendar API
+    private fun loadCalendars() {
+        CoroutineScope(Dispatchers.Main).launch {
+            val accessToken = utils.fetchAccessToken(this@SettingsActivity)
+            if (accessToken == null) {
+                Toast.makeText(this@SettingsActivity, "Failed to fetch token", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            val calendarApi = Retrofit.Builder()
+                .baseUrl("https://www.googleapis.com/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(GoogleCalendarApi::class.java)
+
+            try {
+                val response = calendarApi.getCalendarList("Bearer $accessToken")
+                calendarItems.clear()
+
+                // Fill calendarItems list with calendar data
+                response.items.forEach { calendar ->
+                    calendarItems.add(
+                        CalendarItem(
+                            id = calendar.id,
+                            summary = calendar.summary,
+                            isSelected = calendar.id in previouslySelectedCalendars
+                        )
+                    )
+                }
+
+                // Display names in ListView
+                adapter.clear()
+                adapter.addAll(calendarItems.map { it.summary })
+
+                // Mark previously selected calendars as checked
+                calendarItems.forEachIndexed { index, item ->
+                    binding.calendarListView.setItemChecked(index, item.isSelected)
+                }
+
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Failed to load calendars", Toast.LENGTH_SHORT).show()
+                Log.e("Settings", "Error loading calendars: ${e.message}")
+            }
+        }
+    }
+
+    // Save selected settings to Firebase
+    private fun saveSettings() {
+        val hoursBefore = binding.etHoursBefore.text.toString().toIntOrNull() ?: 24
+
+        val selectedCalendarIds = mutableListOf<String>()
+        for (i in calendarItems.indices) {
+            if (binding.calendarListView.isItemChecked(i)) {
+                selectedCalendarIds.add(calendarItems[i].id)
+            }
+        }
+
+        MyRealtimeFirebase.getInstance().updatePreferences(selectedCalendarIds, hoursBefore)
+        Toast.makeText(this, "Settings saved", Toast.LENGTH_SHORT).show()
     }
 }

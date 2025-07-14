@@ -47,6 +47,7 @@ interface GoogleCalendarApi {
         @Query("maxResults") maxResults: Int = 2500,
         @Query("orderBy") orderBy: String = "startTime",
         @Query("singleEvents") singleEvents: Boolean = true,
-        @Query("timeMin") timeMin: String
+        @Query("timeMin") timeMin: String,
+        @Query("timeMax") timeMax: String? = null
     ): GoogleCalendarResponse
 }

@@ -5,17 +5,16 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.Button
 import android.widget.EditText
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.avichai98.smartreminder.R
@@ -23,14 +22,12 @@ import com.avichai98.smartreminder.adapters.AppointmentAdapter
 import com.avichai98.smartreminder.databinding.ActivityAppointmentBinding
 import com.avichai98.smartreminder.models.GoogleCalendar
 import com.avichai98.smartreminder.models.Appointment
+import com.avichai98.smartreminder.services.AppointmentReminderService
 import com.avichai98.smartreminder.utils.PermissionManager
 import com.avichai98.smartreminder.utils.Utils
-import com.google.android.gms.auth.GoogleAuthUtil
-import com.google.android.gms.auth.api.signin.GoogleSignIn
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
@@ -39,10 +36,12 @@ import java.util.*
 class AppointmentActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAppointmentBinding
-    private lateinit var permissionManager: PermissionManager
+    private lateinit var adapter: AppointmentAdapter
     private val appointments = mutableListOf<Appointment>()
     private val utils = Utils()
-    private lateinit var adapter: AppointmentAdapter
+
+    private lateinit var permissionManager: PermissionManager
+    private lateinit var notificationPermissionLauncher: ActivityResultLauncher<Array<String>>
 
     private var calendarList: List<GoogleCalendar> = emptyList()
     private var selectedCalendarId: String = "primary"
@@ -75,12 +74,11 @@ class AppointmentActivity : AppCompatActivity() {
 
         binding.fabAddAppointment.setOnClickListener {
             showAddAppointmentDialog(this) { newAppointment ->
-
                 appointments.add(newAppointment)
                 adapter.notifyItemInserted(appointments.size - 1)
 
                 CoroutineScope(Dispatchers.Main).launch {
-                    val accessToken = fetchAccessToken()
+                    val accessToken = utils.fetchAccessToken(this@AppointmentActivity)
                     if (accessToken != null) {
                         utils.addEventToGoogleCalendar(newAppointment, accessToken)
                     }
@@ -88,54 +86,39 @@ class AppointmentActivity : AppCompatActivity() {
             }
         }
 
-        binding.btnCreateCalendar.setOnClickListener {
-            showCreateCalendarDialog()
-        }
-
-        binding.btnSelectCalendar.setOnClickListener {
-            fetchCalendarList()
-        }
-
+        binding.btnCreateCalendar.setOnClickListener { showCreateCalendarDialog() }
+        binding.btnSelectCalendar.setOnClickListener { fetchCalendarList() }
         binding.btnSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
+        // Step 1: Init launcher
+        notificationPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+            val allGranted = permissions.all { it.value }
+            if (allGranted) {
+                val intent = Intent(this, AppointmentReminderService::class.java)
+                ContextCompat.startForegroundService(this, intent)
+            } else {
+                permissionManager.openAppSettings()
+            }
+        }
+
+        // Step 2: Init permission manager
+        permissionManager = PermissionManager(
+            context = this,
+            permissionsLauncher = notificationPermissionLauncher,
+            onPermissionsGranted = {
+                val intent = Intent(this, AppointmentReminderService::class.java)
+                ContextCompat.startForegroundService(this, intent)
+            },
+            rationaleMessage = "Notification permission is required to send reminders."
+        )
+
+        // Step 3: Request permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                    1001
-                )
-            }
-        }
-    }
-
-    private val notificationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val allGranted = permissions.all { it.value }
-        if (allGranted) {
-            // Permission granted
-        } else {
-            permissionManager.openAppSettings()
-        }
-    }
-
-    private suspend fun fetchAccessToken(): String? {
-        return withContext(Dispatchers.IO) {
-            try {
-                val account = GoogleSignIn.getLastSignedInAccount(this@AppointmentActivity)
-                if (account != null) {
-                    val scope = "oauth2:https://www.googleapis.com/auth/calendar"
-                    account.account?.let { GoogleAuthUtil.getToken(this@AppointmentActivity, it, scope) }
-                } else {
-                    null
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error getting access token: ${e.localizedMessage}")
-                null
-            }
+            permissionManager.checkPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS))
         }
     }
 
@@ -150,7 +133,7 @@ class AppointmentActivity : AppCompatActivity() {
                 val name = input.text.toString()
                 if (name.isNotBlank()) {
                     CoroutineScope(Dispatchers.IO).launch {
-                        val accessToken = fetchAccessToken()
+                        val accessToken = utils.fetchAccessToken(this@AppointmentActivity)
                         accessToken?.let {
                             createNewCalendar(name, it)
                             fetchCalendarList()
@@ -182,7 +165,7 @@ class AppointmentActivity : AppCompatActivity() {
 
     private fun fetchCalendarList() {
         CoroutineScope(Dispatchers.Main).launch {
-            val accessToken = fetchAccessToken()
+            val accessToken = utils.fetchAccessToken(this@AppointmentActivity)
             if (accessToken != null) {
                 val retrofit = Retrofit.Builder()
                     .baseUrl("https://www.googleapis.com/")
@@ -216,7 +199,7 @@ class AppointmentActivity : AppCompatActivity() {
 
     private fun fetchCalendarEvents() {
         CoroutineScope(Dispatchers.Main).launch {
-            val accessToken = fetchAccessToken()
+            val accessToken = utils.fetchAccessToken(this@AppointmentActivity)
             if (accessToken != null) {
                 val retrofit = Retrofit.Builder()
                     .baseUrl("https://www.googleapis.com/")
