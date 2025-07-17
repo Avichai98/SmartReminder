@@ -1,29 +1,33 @@
 package com.avichai98.smartreminder.activities
 
-import com.avichai98.smartreminder.interfaces.GoogleCalendarApi
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
-import android.content.Context
+import android.Manifest
+import android.accounts.Account
+import android.content.ContentResolver
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.CalendarContract
 import android.util.Log
-import android.view.LayoutInflater
-import android.widget.Button
 import android.widget.EditText
+import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.avichai98.smartreminder.R
 import com.avichai98.smartreminder.adapters.AppointmentAdapter
 import com.avichai98.smartreminder.databinding.ActivityAppointmentBinding
-import com.avichai98.smartreminder.models.GoogleCalendar
+import com.avichai98.smartreminder.interfaces.GoogleCalendarApi
 import com.avichai98.smartreminder.models.Appointment
+import com.avichai98.smartreminder.models.GoogleCalendar
 import com.avichai98.smartreminder.services.AppointmentReminderService
-import com.avichai98.smartreminder.utils.PermissionManager
+import com.avichai98.smartreminder.utils.MyRealtimeFirebase
 import com.avichai98.smartreminder.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +35,9 @@ import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class AppointmentActivity : AppCompatActivity() {
 
@@ -40,50 +46,35 @@ class AppointmentActivity : AppCompatActivity() {
     private val appointments = mutableListOf<Appointment>()
     private val utils = Utils()
 
-    private lateinit var permissionManager: PermissionManager
-    private lateinit var notificationPermissionLauncher: ActivityResultLauncher<Array<String>>
-
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private val POST_NOTIFICATION_PERMISSION = Manifest.permission.POST_NOTIFICATIONS
+    private lateinit var calendarLauncher: ActivityResultLauncher<Intent>
+    private lateinit var permissionsLauncher: ActivityResultLauncher<Array<String>>
+    private var pendingAction: String? = null // Stores the action to perform after permission is granted
     private var calendarList: List<GoogleCalendar> = emptyList()
     private var selectedCalendarId: String = "primary"
 
     private val TAG = "HybridSignIn"
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = ActivityAppointmentBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        adapter = AppointmentAdapter(appointments,
-            onDeleteClick = { appointment ->
-                appointments.remove(appointment)
-                adapter.notifyDataSetChanged()
-            },
-            onUpdateClick = { appointment ->
-                showUpdateAppointmentDialog(this, appointment) { updated ->
-                    val index = appointments.indexOfFirst { it.id == updated.id }
-                    if (index != -1) {
-                        appointments[index] = updated
-                        adapter.notifyItemChanged(index)
-                    }
-                }
-            }
+        adapter = AppointmentAdapter(
+            appointments,
         )
 
         binding.rvAppointments.layoutManager = LinearLayoutManager(this)
         binding.rvAppointments.adapter = adapter
 
         binding.fabAddAppointment.setOnClickListener {
-            showAddAppointmentDialog(this) { newAppointment ->
-                appointments.add(newAppointment)
-                adapter.notifyItemInserted(appointments.size - 1)
-
-                CoroutineScope(Dispatchers.Main).launch {
-                    val accessToken = utils.fetchAccessToken(this@AppointmentActivity)
-                    if (accessToken != null) {
-                        utils.addEventToGoogleCalendar(newAppointment, accessToken)
-                    }
-                }
+            val intent = Intent(Intent.ACTION_INSERT).apply {
+                data = CalendarContract.Events.CONTENT_URI
             }
+            calendarLauncher.launch(intent)
         }
 
         binding.btnCreateCalendar.setOnClickListener { showCreateCalendarDialog() }
@@ -92,44 +83,36 @@ class AppointmentActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        // Step 1: Init launcher
-        notificationPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { permissions ->
-            val allGranted = permissions.all { it.value }
-            if (allGranted) {
-                val intent = Intent(this, AppointmentReminderService::class.java)
-                ContextCompat.startForegroundService(this, intent)
-            } else {
-                permissionManager.openAppSettings()
+        setupLaunchers() // Initialize ActivityResultLauncher
+        requestPermission("post_notifications")
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun requestPermission(action: String) {
+        pendingAction = action
+
+        when (action) {
+            "post_notifications" -> {
+                if (ContextCompat.checkSelfPermission(this, POST_NOTIFICATION_PERMISSION)
+                    != PackageManager.PERMISSION_GRANTED
+                ) {
+                    permissionsLauncher.launch(arrayOf(POST_NOTIFICATION_PERMISSION))
+                } else {
+                    startReminderService()
+                }
             }
-        }
-
-        // Step 2: Init permission manager
-        permissionManager = PermissionManager(
-            context = this,
-            permissionsLauncher = notificationPermissionLauncher,
-            onPermissionsGranted = {
-                val intent = Intent(this, AppointmentReminderService::class.java)
-                ContextCompat.startForegroundService(this, intent)
-            },
-            rationaleMessage = "Notification permission is required to send reminders."
-        )
-
-        // Step 3: Request permission
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissionManager.checkPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS))
+            else -> Log.e("AppointmentActivity", "Invalid action: $action")
         }
     }
 
     private fun showCreateCalendarDialog() {
         val input = EditText(this)
-        input.hint = "Enter calendar name"
+        input.hint = R.string.enter_calendar_name.toString()
 
         AlertDialog.Builder(this)
-            .setTitle("New Calendar")
+            .setTitle(R.string.create_new_calendar)
             .setView(input)
-            .setPositiveButton("Create") { _, _ ->
+            .setPositiveButton(R.string.create) { _, _ ->
                 val name = input.text.toString()
                 if (name.isNotBlank()) {
                     CoroutineScope(Dispatchers.IO).launch {
@@ -141,7 +124,83 @@ class AppointmentActivity : AppCompatActivity() {
                     }
                 }
             }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun setupLaunchers() {
+        calendarLauncher = registerForActivityResult(
+            StartActivityForResult()
+        ) { result: ActivityResult ->
+            if (result.resultCode == RESULT_OK) {
+                val account = Account(MyRealtimeFirebase.getInstance().getCurrentUserEmail(), "com.google")
+                val authority = "com.android.calendar"
+
+                val extras = Bundle().apply {
+                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                    putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                }
+
+                ContentResolver.requestSync(account, authority, extras)
+            }
+        }
+
+        permissionsLauncher = registerForActivityResult(RequestMultiplePermissions()) { result ->
+            var allGranted = true
+            var shouldShowRationale = false
+
+            for ((permission, granted) in result) {
+                if (!granted) {
+                    allGranted = false
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
+                        shouldShowRationale = true
+                    }
+                }
+            }
+
+            if (allGranted) {
+                when (pendingAction) {
+                    "post_notifications" -> startReminderService()
+                }
+            } else if (shouldShowRationale) {
+                showPermissionRationaleDialog()
+            } else {
+                showSettingsDialog()
+            }
+
+            pendingAction = null
+        }
+    }
+
+    private fun startReminderService() {
+        val intent = Intent(this, AppointmentReminderService::class.java)
+        ContextCompat.startForegroundService(this, intent)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun showPermissionRationaleDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Permission Required")
+            .setMessage("This permission is needed for the reminders to work.")
+            .setPositiveButton("OK") { _, _ ->
+                requestPermission(pendingAction ?: "")
+            }
             .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showSettingsDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.permission_denied)
+            .setMessage(R.string.after_permission_denied)
+            .setPositiveButton(R.string.open_settings) { _, _ ->
+                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                val uri = android.net.Uri.fromParts("package", packageName, null)
+                intent.data = uri
+                startActivity(intent)
+            }
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -189,7 +248,7 @@ class AppointmentActivity : AppCompatActivity() {
         val calendarNames = calendarList.map { it.summary }.toTypedArray()
 
         AlertDialog.Builder(this)
-            .setTitle("Select Calendar")
+            .setTitle(R.string.select_calendar)
             .setItems(calendarNames) { _, which ->
                 selectedCalendarId = calendarList[which].id
                 fetchCalendarEvents() // Load events for the selected calendar
@@ -221,26 +280,17 @@ class AppointmentActivity : AppCompatActivity() {
                             val startDateTime = event.start.dateTime ?: continue
                             val endDateTime = event.end.dateTime ?: continue
 
-                            // Split date and time
-                            val date = startDateTime.split("T")[0]
-                            val time = startDateTime.split("T")[1].substring(0, 5) // Get HH:mm
-
-                            // Calculate duration
-                            val durationMinutes = calculateDuration(startDateTime, endDateTime)
-
-                            // Extract attendees' emails (if available)
-                            val attendeesEmails = event.attendees?.mapNotNull { it.email } ?: emptyList()
-
                             // Create appointment
                             appointments.add(
                                 Appointment(
-                                    title = event.summary ?: "No Title",
-                                    date = date,
-                                    time = time,
-                                    durationMinutes = durationMinutes,
-                                    customerName = event.organizer?.displayName ?: "Unknown",
-                                    customerEmail = attendeesEmails.joinToString(", "), // Combine all emails as string
-                                    location = event.location ?: "No Location"
+                                    eventId = event.id,
+                                    summary = event.summary ?: "No Title",
+                                    start = event.start,
+                                    end = event.end,
+                                    organizer = event.organizer,
+                                    attendees = event.attendees ?: emptyList(), // Combine all emails as string
+                                    location = event.location ?: "No Location",
+                                    description = event.description ?: "No Description"
                                 )
                             )
 
@@ -259,123 +309,8 @@ class AppointmentActivity : AppCompatActivity() {
         }
     }
 
-    private fun calculateDuration(startDateTime: String, endDateTime: String): Int {
-        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        val start = sdf.parse(startDateTime.substring(0, 19))!!
-        val end = sdf.parse(endDateTime.substring(0, 19))!!
-        val durationMillis = end.time - start.time
-        return (durationMillis / (60 * 1000)).toInt() // Duration in minutes
-    }
-
     private fun getCurrentTimeIso(): String {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
         return sdf.format(Date())
-    }
-
-    private fun showAddAppointmentDialog(context: Context, onSave: (Appointment) -> Unit) {
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_appointment, null)
-        val dialog = AlertDialog.Builder(context)
-            .setView(dialogView)
-            .setTitle("Add Appointment")
-            .create()
-
-        val etTitle = dialogView.findViewById<EditText>(R.id.etTitle)
-        val etDate = dialogView.findViewById<EditText>(R.id.etDate)
-        val etTime = dialogView.findViewById<EditText>(R.id.etTime)
-        val etDuration = dialogView.findViewById<EditText>(R.id.etDuration)
-        val etLocation = dialogView.findViewById<EditText>(R.id.etLocation)
-        val etCustomerName = dialogView.findViewById<EditText>(R.id.etCustomerName)
-        val etCustomerEmail = dialogView.findViewById<EditText>(R.id.etCustomerEmail)
-        val btnSave = dialogView.findViewById<Button>(R.id.btnSave)
-
-        // Show Date Picker
-        etDate.setOnClickListener {
-            val calendar = Calendar.getInstance()
-            val datePicker = DatePickerDialog(context, { _, year, month, dayOfMonth ->
-                val selectedDate = String.format("%02d-%02d-%04d", dayOfMonth, month + 1, year)
-                etDate.setText(selectedDate)
-            }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
-            datePicker.show()
-        }
-
-        // Show Time Picker
-        etTime.setOnClickListener {
-            val calendar = Calendar.getInstance()
-            val timePicker = TimePickerDialog(context, { _, hourOfDay, minute ->
-                val selectedTime = String.format("%02d:%02d", hourOfDay, minute)
-                etTime.setText(selectedTime)
-            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true)
-            timePicker.show()
-        }
-
-        // Show Duration Picker
-        etDuration.setOnClickListener {
-            val durations = arrayOf("15", "30", "45", "60", "90", "120")
-            AlertDialog.Builder(context)
-                .setTitle("Select Duration (minutes)")
-                .setItems(durations) { _, which ->
-                    etDuration.setText(durations[which])
-                }
-                .show()
-        }
-
-        btnSave.setOnClickListener {
-            val appointment = Appointment(
-                title = etTitle.text.toString(),
-                date = etDate.text.toString(),
-                time = etTime.text.toString(),
-                durationMinutes = etDuration.text.toString().toIntOrNull() ?: 60,
-                customerName = etCustomerName.text.toString(),
-                customerEmail = etCustomerEmail.text.toString(),
-                location = etLocation.text.toString()
-            )
-            onSave(appointment)
-            dialog.dismiss()
-        }
-
-        dialog.show()
-    }
-
-
-    private fun showUpdateAppointmentDialog(context: Context, appointment: Appointment, onUpdate: (Appointment) -> Unit) {
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_appointment, null)
-        val dialog = AlertDialog.Builder(context)
-            .setView(dialogView)
-            .setTitle("Update Appointment")
-            .create()
-
-        val etTitle = dialogView.findViewById<EditText>(R.id.etTitle)
-        val etDate = dialogView.findViewById<EditText>(R.id.etDate)
-        val etTime = dialogView.findViewById<EditText>(R.id.etTime)
-        val etDuration = dialogView.findViewById<EditText>(R.id.etDuration)
-        val etLocation = dialogView.findViewById<EditText>(R.id.etLocation)
-        val etCustomerName = dialogView.findViewById<EditText>(R.id.etCustomerName)
-        val etCustomerEmail = dialogView.findViewById<EditText>(R.id.etCustomerEmail)
-        val btnSave = dialogView.findViewById<Button>(R.id.btnSave)
-
-        etTitle.setText(appointment.title)
-        etDate.setText(appointment.date)
-        etTime.setText(appointment.time)
-        etDuration.setText(appointment.durationMinutes.toString())
-        etLocation.setText(appointment.location)
-        etCustomerName.setText(appointment.customerName)
-        etCustomerEmail.setText(appointment.customerEmail)
-
-
-        btnSave.setOnClickListener {
-            val updatedAppointment = appointment.copy(
-                title = etTitle.text.toString(),
-                date = etDate.text.toString(),
-                time = etTime.text.toString(),
-                durationMinutes = etDuration.text.toString().toIntOrNull() ?: 60,
-                customerName = etCustomerName.text.toString(),
-                customerEmail = etCustomerEmail.text.toString(),
-                location = etLocation.text.toString()
-            )
-            onUpdate(updatedAppointment)
-            dialog.dismiss()
-        }
-
-        dialog.show()
     }
 }

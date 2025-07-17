@@ -37,10 +37,12 @@ class AppointmentReminderService : Service() {
         override fun onReceive(context: Context?, intent: Intent?) {
 
             Log.d("ReminderService", "Notification dismissed - restarting foreground")
-            startForeground(NOTIF_ID, createNotification())
+            // Restart the service in foreground after swipe
+            Handler(Looper.getMainLooper()).postDelayed({
+                startForeground(NOTIF_ID, createNotification())
+            }, 60 * 1000)
         }
     }
-
 
     // Runnable that checks for appointments periodically
     private val checkAppointmentsRunnable = object : Runnable {
@@ -86,7 +88,7 @@ class AppointmentReminderService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     // Logic to check for upcoming appointments and trigger reminders
-    private fun checkUpcomingAppointments(calendarId: String, timeBeforeHours: Int) {
+    private fun checkUpcomingAppointments(calendarId: String, timeBeforeHours: Int, selfReminder: Boolean) {
         Log.d(TAG, "Checking appointments for calendar $calendarId with reminder $timeBeforeHours hours before")
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -122,8 +124,14 @@ class AppointmentReminderService : Service() {
                         MyRealtimeFirebase.getInstance().wasReminderSent(calendarId, event.id)
                     }
 
-                    if (reminderAlreadySent || event.organizer!!.email != MyRealtimeFirebase.getInstance()
-                            .getCurrentUserEmail()) continue
+                    if (reminderAlreadySent) continue
+
+                    val isPrimary = calendarId == "primary" || calendarId == MyRealtimeFirebase.getInstance().getCurrentUserEmail()
+
+                    if (isPrimary &&
+                        event.organizer!!.email != MyRealtimeFirebase.getInstance().getCurrentUserEmail())
+                        continue
+
 
                     val title = event.summary ?: "No title"
                     val time = event.start.dateTime ?: continue
@@ -137,6 +145,9 @@ class AppointmentReminderService : Service() {
                     var allEmailsSent = true
 
                     attendees.forEach { email ->
+                        if (!selfReminder && email == MyRealtimeFirebase.getInstance().getCurrentUserEmail())
+                            return@forEach
+
                         val sent = emailSender.sendEmail(
                             subject = "Reminder: $title",
                             body = "This is a reminder for \"$title\" scheduled at $time",
@@ -191,9 +202,9 @@ class AppointmentReminderService : Service() {
     private fun loadUserPreferencesAndCheck() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val (calendarIds, hoursBefore) = MyRealtimeFirebase.getInstance().fetchUserPreferencesSuspend()
+                val (calendarIds, hoursBefore, selfReminder) = MyRealtimeFirebase.getInstance().fetchUserPreferencesSuspend()
                 calendarIds.forEach {
-                    checkUpcomingAppointments(it, hoursBefore)
+                    checkUpcomingAppointments(it, hoursBefore, selfReminder)
                 }
             } catch (e: Exception) {
                 Log.e("ReminderService", "Failed to load user preferences: ${e.message}")

@@ -3,7 +3,6 @@ package com.avichai98.smartreminder.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.avichai98.smartreminder.R
@@ -11,8 +10,6 @@ import com.avichai98.smartreminder.models.Appointment
 
 class AppointmentAdapter(
     private val appointments: MutableList<Appointment>,
-    private val onDeleteClick: (Appointment) -> Unit,
-    private val onUpdateClick: (Appointment) -> Unit
 ) : RecyclerView.Adapter<AppointmentAdapter.AppointmentViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppointmentViewHolder {
@@ -30,22 +27,22 @@ class AppointmentAdapter(
     inner class AppointmentViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fun bind(appointment: Appointment) {
             val titleView = itemView.findViewById<TextView>(R.id.tvTitle)
+            val organizerView = itemView.findViewById<TextView>(R.id.tvOrganizer)
             val dateTimeView = itemView.findViewById<TextView>(R.id.tvDateTime)
-            val emailView = itemView.findViewById<TextView>(R.id.tvEmail)
+            val attendeesView = itemView.findViewById<TextView>(R.id.tvAttendees)
             val locationView = itemView.findViewById<TextView>(R.id.tvLocation)
             val durationView = itemView.findViewById<TextView>(R.id.tvDuration)
-            val deleteButton = itemView.findViewById<ImageButton>(R.id.btnDelete)
-            val updateButton = itemView.findViewById<ImageButton>(R.id.btnUpdate)
 
-            titleView.text = appointment.title
-            dateTimeView.text = "${appointment.date} | ${appointment.time}"
-            emailView.text = "Customer: ${appointment.customerEmail}"
-            val locationText = appointment.location ?: "Location not defined"
-            locationView.text = "Location: $locationText"
-            durationView.text = "Duration: ${appointment.durationMinutes} minutes"
+            val ctx = itemView.context
 
-            deleteButton.setOnClickListener { onDeleteClick(appointment) }
-            updateButton.setOnClickListener { onUpdateClick(appointment) }
+            titleView.text = appointment.summary
+            organizerView.text = "${ctx.getString(R.string.organizer)}: ${appointment.organizer?.displayName ?: "Unknown"}"
+            dateTimeView.text = "${appointment.getStartDate()} | ${appointment.getStartTime()}"
+            attendeesView.text = "${ctx.getString(R.string.attendees)}: ${appointment.getAttendeeEmails()}"
+            val locationText = appointment.location ?: ctx.getString(R.string.location_not_defined)
+            locationView.text = "${ctx.getString(R.string.location)}: $locationText"
+            durationView.text = "${ctx.getString(R.string.duration)}: ${appointment.getDurationMinutes()} ${ctx.getString(R.string.minutes)}"
+
         }
     }
 }

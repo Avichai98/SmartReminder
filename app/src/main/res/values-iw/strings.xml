@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SmartReminder</string>
+    <string name="loading_appointments">טוען פגישות...</string>
+    <string name="no_appointments_available">לא קיימים אירועים</string>
+    <string name="update">עדכן</string>
+    <string name="delete">מחיקה</string>
+    <string name="attendees_example_email_com">משתתפים: example@gmail.com</string>
+    <string name="location_not_defined">מיקום: לא מוגדר</string>
+    <string name="duration_60_minutes">משך האירוע: 60 דקות</string>
+    <string name="date_and_time">תאריך ושעה</string>
+    <string name="appointment_title">כותרת האירוע</string>
+    <string name="select_date">בחירת תאריך</string>
+    <string name="select_time">בחירת שעה</string>
+    <string name="select_duration">בחירת משך הפגישה</string>
+    <string name="location_optional">מיקום (לא חובה)</string>
+    <string name="customer_name">שם הלקוח</string>
+    <string name="customer_email">מייל הלקוח</string>
+    <string name="save_appointment">שמירת הפגישה</string>
+    <string name="select_calendar">בחירת יומן</string>
+    <string name="add_appointment">הוספת פגישה</string>
+    <string name="sign_in_with_google">התחברות באמצעות גוגל</string>
+    <string name="create_new_calendar">יצירת יומן חדש</string>
+    <string name="settings">הגדרות</string>
+    <string name="save_settings">שמירת הגדרות</string>
+    <string name="e_g_24">לדוגמא 24 שעות</string>
+    <string name="hours_before_notification">מספר השעות לפני שליחת התזכורת</string>
+    <string name="cancel">ביטול</string>
+    <string name="create">יצירה</string>
+    <string name="update_appointment">עדכון פגישה</string>
+    <string name="enter_calendar_name">הכנס שם ליומן</string>
+    <string name="calendar_name">שם היומן</string>
+    <string name="self_notification">תזכורת לעצמי</string>
+    <string name="permission_denied">הרשאה נדחתה</string>
+    <string name="after_permission_denied">חסמת הרשאה זו לצמיתות. אנא אפשר אותה באופן ידני בהגדרות.</string>
+    <string name="open_settings">לפתוח את ההגדרות</string>
+    <string name="location">מיקום</string>
+    <string name="duration">משך האירוע</string>
+    <string name="minutes">דקות</string>
+    <string name="organizer">מארגן</string>
+    <string name="attendees">משתתפים</string>
+    <string name="logout">התנתק</string>
+</resources>

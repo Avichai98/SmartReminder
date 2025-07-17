@@ -6,17 +6,18 @@
     android:layout_height="match_parent">
 
     <!-- Empty State Icon -->
-    <ImageView
+    <androidx.appcompat.widget.AppCompatImageView
         android:src="@android:drawable/ic_menu_my_calendar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp" />
 
     <!-- Empty State Message -->
-    <TextView
-        android:text="No appointments available"
+    <com.google.android.material.textview.MaterialTextView
+        android:text="@string/no_appointments_available"
         android:textSize="18sp"
         android:textColor="#666666"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
+
 </LinearLayout>

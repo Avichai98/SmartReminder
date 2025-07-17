@@ -12,7 +12,7 @@
 
     <!-- Loading Message -->
     <TextView
-        android:text="Loading appointments..."
+        android:text="@string/loading_appointments"
         android:layout_marginTop="16dp"
         android:textSize="16sp"
         android:layout_width="wrap_content"

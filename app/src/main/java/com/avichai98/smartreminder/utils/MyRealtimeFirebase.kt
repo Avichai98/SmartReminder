@@ -45,15 +45,16 @@ class MyRealtimeFirebase private constructor(private val user: User) {
     }
 
     // Called when saving user preferences like calendar list and time
-    fun updatePreferences(selectedCalendars: List<String>, minutesBefore: Int) {
+    fun updatePreferences(selectedCalendars: List<String>, minutesBefore: Int, selfReminder: Boolean) {
         user.selectedCalendarIds = selectedCalendars.toMutableList()
         user.reminderHoursBefore = minutesBefore
+        user.selfReminder = selfReminder
         setUser(user)
         saveUser()
     }
 
     // Coroutine-based version
-    suspend fun fetchUserPreferencesSuspend(): Pair<List<String>, Int> {
+    suspend fun fetchUserPreferencesSuspend(): Triple<List<String>, Int, Boolean> {
         return suspendCancellableCoroutine { continuation ->
             userDatabaseReference.child(user.uid).get()
                 .addOnSuccessListener { snapshot ->
@@ -61,14 +62,19 @@ class MyRealtimeFirebase private constructor(private val user: User) {
                     if (updatedUser != null) {
                         setUser(updatedUser)
                         continuation.resume(
-                            updatedUser.selectedCalendarIds to updatedUser.reminderHoursBefore
+                            Triple(
+                                updatedUser.selectedCalendarIds,
+                                updatedUser.reminderHoursBefore,
+                                updatedUser.selfReminder
+                            )
                         )
+
                     } else {
-                        continuation.resume(emptyList<String>() to 15)
+                        continuation.resume(Triple(emptyList(), 15, false))
                     }
                 }
                 .addOnFailureListener {
-                    continuation.resume(emptyList<String>() to 15)
+                    continuation.resume(Triple(emptyList(), 15, false))
                 }
         }
     }
@@ -105,6 +111,7 @@ class MyRealtimeFirebase private constructor(private val user: User) {
     private fun setUser(updatedUser: User) {
         user.selectedCalendarIds = updatedUser.selectedCalendarIds
         user.reminderHoursBefore = updatedUser.reminderHoursBefore
+        user.selfReminder = updatedUser.selfReminder
     }
 
     //Encode unsafe Firebase key characters

@@ -1,5 +1,6 @@
 package com.avichai98.smartreminder.notifications
 
+import com.avichai98.smartreminder.BuildConfig
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -9,10 +10,10 @@ import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 
 class EmailSender(
-    private val smtpHost: String = "smtp.gmail.com",
-    private val smtpPort: String = "587",
-    private val username: String = "smart.reminder98@gmail.com",
-    private val password: String = "sugvhcuypivqbwkn"
+    private val smtpHost: String? = BuildConfig.SMTP_HOST, // Use environment variables for security.
+    private val smtpPort: String? = BuildConfig.SMTP_PORT,
+    private val username: String? = BuildConfig.SMTP_USERNAME,
+    private val password: String = BuildConfig.SMTP_PASSWORD
 ) {
     companion object {
         private const val TAG = "EmailSender"

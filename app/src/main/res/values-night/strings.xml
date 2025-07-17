@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="no_appointments_available">No appointments available</string>
+    <string name="update">Update</string>
+    <string name="attendees_example_email_com">Attendees: example@email.com</string>
+    <string name="location_not_defined">Location: Not defined</string>
+    <string name="duration_60_minutes">Duration: 60 minutes</string>
+    <string name="date_and_time">Date and Time</string>
+    <string name="appointment_title">Appointment Title</string>
+    <string name="select_date">Select Date</string>
+    <string name="select_time">Select Time</string>
+    <string name="select_duration">Select Duration</string>
+    <string name="location_optional">Location (Optional)</string>
+    <string name="customer_name">Customer Name</string>
+    <string name="customer_email">Customer Email</string>
+    <string name="save_appointment">Save Appointment</string>
+    <string name="select_calendar">Select Calendar</string>
+    <string name="add_appointment">Add Appointment</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="create_new_calendar">Create New Calendar</string>
+    <string name="self_notification">Self Notification</string>
+</resources>

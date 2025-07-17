@@ -1,3 +1,9 @@
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    load(rootProject.file("local.properties").inputStream())
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -16,6 +22,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "SMTP_HOST", "\"${localProperties["SMTP_HOST"]}\"")
+        buildConfigField("String", "SMTP_PORT", "\"${localProperties["SMTP_PORT"]}\"")
+        buildConfigField("String", "USERNAME", "\"${localProperties["USERNAME"]}\"")
+        buildConfigField("String", "PASSWORD", "\"${localProperties["PASSWORD"]}\"")
     }
 
     buildTypes {
@@ -86,4 +97,6 @@ dependencies {
 
     implementation("com.sun.mail:android-mail:1.6.7") // Jakarta Mail for Android
     implementation("com.sun.mail:android-activation:1.6.7") // Activation framework
+
+    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
 }

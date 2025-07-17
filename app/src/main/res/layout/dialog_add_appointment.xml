@@ -11,67 +11,67 @@
         android:layout_height="wrap_content">
 
         <!-- Appointment Title Input -->
-        <EditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etTitle"
-            android:hint="Appointment Title"
+            android:hint="@string/appointment_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
         <!-- Appointment Date Input -->
-        <EditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etDate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Select Date"
+            android:hint="@string/select_date"
             android:focusable="false"
             android:clickable="true" />
 
         <!-- Appointment Time Input -->
-        <EditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etTime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Select Time"
+            android:hint="@string/select_time"
             android:focusable="false"
             android:clickable="true" />
 
         <!-- Appointment Duration Input -->
-        <EditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etDuration"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Select Duration"
+            android:hint="@string/select_duration"
             android:focusable="false"
             android:clickable="true" />
 
         <!-- Appointment Location Input -->
-        <EditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etLocation"
-            android:hint="Location (Optional)"
+            android:hint="@string/location_optional"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
         <!-- Customer Name Input -->
-        <EditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etCustomerName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Customer Name"
+            android:hint="@string/customer_name"
             android:inputType="textPersonName"
             android:layout_marginTop="8dp" />
 
         <!-- Customer Email Input -->
-        <EditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etCustomerEmail"
-            android:hint="Customer Email"
+            android:hint="@string/customer_email"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textEmailAddress" />
 
         <!-- Save Button -->
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSave"
-            android:text="Save Appointment"
+            android:text="@string/save_appointment"
             android:layout_marginTop="16dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
