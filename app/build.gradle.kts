@@ -12,12 +12,12 @@ plugins {
 
 android {
     namespace = "com.avichai98.smartreminder"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.avichai98.smartreminder"
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -51,7 +51,7 @@ android {
         android.buildFeatures.buildConfig = true
     }
 
-    packagingOptions {
+    packaging {
         resources {
             excludes += "/META-INF/versions/**"
             excludes += "/META-INF/DEPENDENCIES"
@@ -84,20 +84,20 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Google Identity Services - הגרסאות העדכניות ביותר
-    implementation("androidx.credentials:credentials:1.2.2")
-    implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
+    // Google Identity Services
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
 
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation(libs.play.services.auth)
 
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
 
-    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
-    implementation("com.google.firebase:firebase-analytics")
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
 
-    implementation("com.sun.mail:android-mail:1.6.7") // Jakarta Mail for Android
-    implementation("com.sun.mail:android-activation:1.6.7") // Activation framework
+    implementation(libs.android.mail) // Jakarta Mail for Android
+    implementation(libs.android.activation) // Activation framework
 
-    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
+    implementation(libs.dotenv.kotlin)
 }

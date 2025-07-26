@@ -19,17 +19,17 @@
 
 ## 🛠️ Tech Stack
 
-| Technology      | Purpose                                 |
-|------------------|------------------------------------------|
-| Kotlin           | Primary programming language            |
-| Android SDK      | Native mobile app development           |
-| Firebase Auth    | User authentication                    |
-| Retrofit         | REST API client for Google Calendar     |
-| Google Calendar API | Calendar and event management       |
-| RecyclerView     | Display list of appointments            |
-| AlertDialog      | Add/Edit dialogs                        |
-| Services         | Background reminder handling            |
-| ActivityResultLauncher | Intents and permissions management |
+| Technology             | Purpose                             |
+|------------------------|-------------------------------------|
+| Kotlin                 | Primary programming language        |
+| Android SDK            | Native mobile app development       |
+| Firebase Auth          | User authentication                 |
+| Retrofit               | REST API client for Google Calendar |
+| Google Calendar API    | Calendar and event management       |
+| RecyclerView           | Display list of appointments        |
+| AlertDialog            | Add/Edit dialogs                    |
+| Services               | Background reminder handling        |
+| ActivityResultLauncher | Intents and permissions management  |
 
 ---
 
@@ -66,9 +66,9 @@ Connect a device or emulator → Click ▶️ Run
 
 ## 🖼️ Screenshots
 
-| Home Screen                                                | Add Appointment                                                             | Select Calendar                                                       | Settings                                              |
-|------------------------------------------------------------|-----------------------------------------------------------------------------|-----------------------------------------------------------------------|-------------------------------------------------------|
-| !![home_page.jpg](app/src/main/res/drawable/home_page.jpg) | ![create_appointment.jpg](app/src/main/res/drawable/create_appointment.jpg) | ![select_calendar.jpg](app/src/main/res/drawable/select_calendar.jpg) | ![sttings.jpg](app/src/main/res/drawable/sttings.jpg) |
+| Home Screen                                                | Add Appointment                                                             | Select Calendar                                                       | Settings                                                |
+|------------------------------------------------------------|-----------------------------------------------------------------------------|-----------------------------------------------------------------------|---------------------------------------------------------|
+| !![home_page.jpg](app/src/main/res/drawable/home_page.jpg) | ![create_appointment.jpg](app/src/main/res/drawable/create_appointment.jpg) | ![select_calendar.jpg](app/src/main/res/drawable/select_calendar.jpg) | ![settings.jpg](app/src/main/res/drawable/settings.jpg) |
 
 ---
 

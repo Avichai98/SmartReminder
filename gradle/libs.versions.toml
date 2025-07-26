@@ -1,5 +1,9 @@
 [versions]
 agp = "8.11.1"
+androidActivation = "1.6.7"
+converterGson = "3.0.0"
+dotenvKotlin = "6.5.1"
+firebaseBom = "34.0.0"
 kotlin = "2.0.21"
 coreKtx = "1.10.1"
 junit = "4.13.2"
@@ -18,9 +22,16 @@ credentialsPlayServicesAuth = "1.5.0"
 googleid = "1.1.1"
 identityJvm = "202411.1"
 firebaseDatabaseKtx = "21.0.0"
+playServicesAuth = "21.4.0"
 
 [libraries]
+android-activation = { module = "com.sun.mail:android-activation", version.ref = "androidActivation" }
+android-mail = { module = "com.sun.mail:android-mail", version.ref = "androidActivation" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenvKotlin" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -36,6 +47,8 @@ googleid = { group = "com.google.android.libraries.identity.googleid", name = "g
 identity-jvm = { group = "com.android.identity", name = "identity-jvm", version.ref = "identityJvm" }
 material-v1120 = { module = "com.google.android.material:material", version.ref = "materialVersion" }
 firebase-database-ktx = { group = "com.google.firebase", name = "firebase-database-ktx", version.ref = "firebaseDatabaseKtx" }
+play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "converterGson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
