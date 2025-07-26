@@ -12,8 +12,8 @@ import javax.mail.internet.MimeMessage
 class EmailSender(
     private val smtpHost: String? = BuildConfig.SMTP_HOST, // Use environment variables for security.
     private val smtpPort: String? = BuildConfig.SMTP_PORT,
-    private val username: String? = BuildConfig.SMTP_USERNAME,
-    private val password: String = BuildConfig.SMTP_PASSWORD
+    private val username: String? = BuildConfig.USERNAME,
+    private val password: String = BuildConfig.PASSWORD
 ) {
     companion object {
         private const val TAG = "EmailSender"

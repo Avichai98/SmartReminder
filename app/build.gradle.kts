@@ -48,6 +48,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        android.buildFeatures.buildConfig = true
     }
 
     packagingOptions {

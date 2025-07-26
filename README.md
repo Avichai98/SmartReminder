@@ -66,9 +66,9 @@ Connect a device or emulator → Click ▶️ Run
 
 ## 🖼️ Screenshots
 
-| Home Screen | Add Appointment | Select Calendar | Reminder |
-|-------------|------------------|------------------|----------|
-| ![Home](screenshots/main_screen.png) | ![Add](screenshots/add_appointment.png) | ![Calendar](screenshots/select_calendar.png) | ![Reminder](screenshots/reminder_service.png) |
+| Home Screen                                                | Add Appointment                                                             | Select Calendar                                                       | Settings                                              |
+|------------------------------------------------------------|-----------------------------------------------------------------------------|-----------------------------------------------------------------------|-------------------------------------------------------|
+| !![home_page.jpg](app/src/main/res/drawable/home_page.jpg) | ![create_appointment.jpg](app/src/main/res/drawable/create_appointment.jpg) | ![select_calendar.jpg](app/src/main/res/drawable/select_calendar.jpg) | ![sttings.jpg](app/src/main/res/drawable/sttings.jpg) |
 
 ---
 
