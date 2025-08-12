@@ -72,6 +72,12 @@ Connect a device or emulator → Click ▶️ Run
 
 ---
 
+## 🎥 Demo Video
+
+[📺 Click here to watch the demo](https://drive.google.com/file/d/1woXRxkwmsDXraRLAZjvsmiToya4ceA3S/view?usp=drive_link)
+
+---
+
 ## 📂 Project Structure
 
 ```
