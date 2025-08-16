@@ -26,7 +26,6 @@ import com.avichai98.smartreminder.databinding.ActivityAppointmentBinding
 import com.avichai98.smartreminder.interfaces.GoogleCalendarApi
 import com.avichai98.smartreminder.models.Appointment
 import com.avichai98.smartreminder.models.GoogleCalendar
-import com.avichai98.smartreminder.services.AppointmentReminderService
 import com.avichai98.smartreminder.utils.MyRealtimeFirebase
 import com.avichai98.smartreminder.utils.Utils
 import kotlinx.coroutines.CoroutineScope
@@ -98,7 +97,7 @@ class AppointmentActivity : AppCompatActivity() {
                 ) {
                     permissionsLauncher.launch(arrayOf(POST_NOTIFICATION_PERMISSION))
                 } else {
-                    startReminderService()
+
                 }
             }
             else -> Log.e("AppointmentActivity", "Invalid action: $action")
@@ -161,7 +160,7 @@ class AppointmentActivity : AppCompatActivity() {
 
             if (allGranted) {
                 when (pendingAction) {
-                    "post_notifications" -> startReminderService()
+                 //   "post_notifications" ->
                 }
             } else if (shouldShowRationale) {
                 showPermissionRationaleDialog()
@@ -171,11 +170,6 @@ class AppointmentActivity : AppCompatActivity() {
 
             pendingAction = null
         }
-    }
-
-    private fun startReminderService() {
-        val intent = Intent(this, AppointmentReminderService::class.java)
-        ContextCompat.startForegroundService(this, intent)
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -277,9 +271,6 @@ class AppointmentActivity : AppCompatActivity() {
                     appointments.clear()
                     if (response.items.isNotEmpty()) {
                         for (event in response.items) {
-                            val startDateTime = event.start.dateTime ?: continue
-                            val endDateTime = event.end.dateTime ?: continue
-
                             // Create appointment
                             appointments.add(
                                 Appointment(

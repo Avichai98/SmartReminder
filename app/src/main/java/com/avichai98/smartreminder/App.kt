@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import com.avichai98.smartreminder.models.User
 import com.avichai98.smartreminder.utils.MyRealtimeFirebase
+import com.avichai98.smartreminder.utils.Utils
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 
@@ -21,5 +22,7 @@ class App : Application() {
             val user = User(firebaseUser.uid, email)
             MyRealtimeFirebase.init(user)
         }
+
+        Utils().scheduleReminderWorker(this)
     }
 }
