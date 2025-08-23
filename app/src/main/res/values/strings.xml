@@ -40,4 +40,11 @@
     <string name="organizer">Organizer</string>
     <string name="attendees">Attendees</string>
     <string name="logout">Logout</string>
+    <string name="organizer_me">Organizer: me</string>
+    <string name="no_appointments">No Appointments</string>
+    <string name="tap_plus_to_add">Tap Plus To Add</string>
+    <string name="appointments">Appointments</string>
+    <string name="field_required">Field Required</string>
+    <string name="failed_to_authenticate">Failed To Authenticate</string>
+    <string name="action_failed_try_again">Action Failed Try Again</string>
 </resources>

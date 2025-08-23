@@ -9,7 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.CalendarContract
 import android.util.Log
-import android.widget.EditText
+import android.view.LayoutInflater
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
@@ -19,6 +19,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.avichai98.smartreminder.R
 import com.avichai98.smartreminder.adapters.AppointmentAdapter
@@ -26,11 +27,16 @@ import com.avichai98.smartreminder.databinding.ActivityAppointmentBinding
 import com.avichai98.smartreminder.interfaces.GoogleCalendarApi
 import com.avichai98.smartreminder.models.Appointment
 import com.avichai98.smartreminder.models.GoogleCalendar
+import com.avichai98.smartreminder.models.GoogleCalendarEvent
 import com.avichai98.smartreminder.utils.MyRealtimeFirebase
 import com.avichai98.smartreminder.utils.Utils
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
@@ -52,6 +58,7 @@ class AppointmentActivity : AppCompatActivity() {
     private var pendingAction: String? = null // Stores the action to perform after permission is granted
     private var calendarList: List<GoogleCalendar> = emptyList()
     private var selectedCalendarId: String = "primary"
+    private var afterCalendarPermissionGranted: (() -> Unit)? = null
 
     private val TAG = "HybridSignIn"
 
@@ -62,9 +69,24 @@ class AppointmentActivity : AppCompatActivity() {
         binding = ActivityAppointmentBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        adapter = AppointmentAdapter(
-            appointments,
-        )
+        adapter = AppointmentAdapter(appointments).apply {
+            onItemClick = { appt ->
+                val e = GoogleCalendarEvent(
+                    id = appt.eventId,
+                    iCalUID = appt.iCalUID,
+                    summary = appt.summary,
+                    description = appt.description,
+                    location = appt.location,
+                    start = appt.start,
+                    end = appt.end,
+                    organizer = appt.organizer,
+                    attendees = appt.attendees
+                )
+                onEventClick(e)
+            }
+        }
+        binding.rvAppointments.adapter = adapter
+
 
         binding.rvAppointments.layoutManager = LinearLayoutManager(this)
         binding.rvAppointments.adapter = adapter
@@ -105,26 +127,54 @@ class AppointmentActivity : AppCompatActivity() {
     }
 
     private fun showCreateCalendarDialog() {
-        val input = EditText(this)
-        input.hint = R.string.enter_calendar_name.toString()
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_create_calendar, null)
+        val til = view.findViewById<TextInputLayout>(R.id.tilCalendarName)
+        val et = view.findViewById<TextInputEditText>(R.id.etCalendarName)
 
-        AlertDialog.Builder(this)
-            .setTitle(R.string.create_new_calendar)
-            .setView(input)
-            .setPositiveButton(R.string.create) { _, _ ->
-                val name = input.text.toString()
-                if (name.isNotBlank()) {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val accessToken = utils.fetchAccessToken(this@AppointmentActivity)
-                        accessToken?.let {
-                            createNewCalendar(name, it)
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.create_new_calendar))
+            .setView(view)
+            .setPositiveButton(getString(R.string.create), null)
+            .setNegativeButton(getString(R.string.cancel), null)
+            .create()
+
+        dialog.setOnShowListener {
+            val btn = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+            btn.isEnabled = false
+
+            fun validate() {
+                val name = et.text?.toString()?.trim().orEmpty()
+                val valid = name.isNotEmpty()
+                til.error = if (valid) null else getString(R.string.field_required)
+                btn.isEnabled = valid
+            }
+
+            et.addTextChangedListener(afterTextChanged = { validate() })
+            validate()
+            btn.setOnClickListener {
+                val name = et.text?.toString()?.trim().orEmpty()
+                if (name.isBlank()) { validate(); return@setOnClickListener }
+
+                CoroutineScope(Dispatchers.Main).launch {
+                    try {
+                        val token = withContext(Dispatchers.IO) { utils.fetchAccessToken(this@AppointmentActivity) }
+                        if (token.isNullOrEmpty()) {
+                            til.error = getString(R.string.failed_to_authenticate)
+                            return@launch
+                        }
+                        withContext(Dispatchers.IO) {
+                            createNewCalendar(name, token)
                             fetchCalendarList()
                         }
+                        dialog.dismiss()
+                    } catch (_: Exception) {
+                        til.error = getString(R.string.action_failed_try_again)
                     }
                 }
             }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+        }
+
+        dialog.show()
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -160,6 +210,10 @@ class AppointmentActivity : AppCompatActivity() {
 
             if (allGranted) {
                 when (pendingAction) {
+                    "read_calendar" -> {
+                        afterCalendarPermissionGranted?.invoke()
+                        afterCalendarPermissionGranted = null
+                    }
                  //   "post_notifications" ->
                 }
             } else if (shouldShowRationale) {
@@ -275,6 +329,7 @@ class AppointmentActivity : AppCompatActivity() {
                             appointments.add(
                                 Appointment(
                                     eventId = event.id,
+                                    iCalUID = event.iCalUID,
                                     summary = event.summary ?: "No Title",
                                     start = event.start,
                                     end = event.end,
@@ -303,5 +358,94 @@ class AppointmentActivity : AppCompatActivity() {
     private fun getCurrentTimeIso(): String {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
         return sdf.format(Date())
+    }
+
+    // RFC3339 "2025-08-23T10:00:00+03:00" -> millis
+    private fun rfc3339ToMillis(dateTime: String?): Long? {
+        if (dateTime.isNullOrBlank()) return null
+        return try { java.time.Instant.parse(dateTime).toEpochMilli() } catch (_: Exception) { null }
+    }
+
+    // All-day "yyyy-MM-dd" -> start of day millis
+    private fun allDayDateToMillis(date: String?): Long? {
+        if (date.isNullOrBlank()) return null
+        return try {
+            java.time.LocalDate.parse(date)
+                .atStartOfDay(java.time.ZoneId.systemDefault())
+                .toInstant().toEpochMilli()
+        } catch (_: Exception) { null }
+    }
+
+    private fun eventStartMillis(e: GoogleCalendarEvent): Long? =
+        rfc3339ToMillis(e.start.dateTime) ?: allDayDateToMillis(e.start.dateTime)
+
+    private fun eventEndMillis(e: GoogleCalendarEvent): Long? =
+        rfc3339ToMillis(e.end.dateTime) ?: allDayDateToMillis(e.end.dateTime)
+
+    private suspend fun findLocalIdByICalUid(icalUid: String): Long? =
+        withContext(Dispatchers.IO) {
+            val projection = arrayOf(CalendarContract.Events._ID)
+            val selection = "${CalendarContract.Events.UID_2445}=?"
+            contentResolver.query(
+                CalendarContract.Events.CONTENT_URI,
+                projection,
+                selection,
+                arrayOf(icalUid),
+                null
+            )?.use { c ->
+                if (c.moveToFirst()) c.getLong(0) else null
+            }
+        }
+
+    private fun openCalendarOnTime(startMillis: Long) {
+        val uri = CalendarContract.CONTENT_URI.buildUpon()
+            .appendPath("time")
+            .appendPath(startMillis.toString())
+            .build()
+        startActivity(Intent(Intent.ACTION_VIEW).setData(uri))
+    }
+
+    private fun editLocalCalendarEvent(localEventId: Long, beginMillis: Long?, endMillis: Long?) {
+        val uri = android.content.ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, localEventId)
+        val intent = Intent(Intent.ACTION_EDIT).setData(uri).apply {
+            beginMillis?.let { putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, it) }
+            endMillis?.let { putExtra(CalendarContract.EXTRA_EVENT_END_TIME, it) }
+            setPackage("com.google.android.calendar")
+        }
+        try {
+            startActivity(intent)
+        } catch (_: android.content.ActivityNotFoundException) {
+            startActivity(Intent(Intent.ACTION_EDIT, uri))
+        }
+    }
+
+    private fun onEventClick(e: GoogleCalendarEvent) {
+        ensureReadCalendarPermission {
+            val startMs = eventStartMillis(e)
+            val endMs = eventEndMillis(e)
+
+            CoroutineScope(Dispatchers.Main).launch {
+                val localId = e.iCalUID?.let { findLocalIdByICalUid(it) }
+                if (localId != null) {
+                    editLocalCalendarEvent(localId, startMs, endMs)
+                } else {
+                    openCalendarOnTime(startMs ?: System.currentTimeMillis())
+                }
+            }
+        }
+    }
+
+    private fun ensureReadCalendarPermission(then: () -> Unit) {
+        val granted = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.READ_CALENDAR
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (granted) {
+            then()
+        } else {
+            pendingAction = "read_calendar"
+            afterCalendarPermissionGranted = then
+            permissionsLauncher.launch(arrayOf(Manifest.permission.READ_CALENDAR))
+        }
     }
 }

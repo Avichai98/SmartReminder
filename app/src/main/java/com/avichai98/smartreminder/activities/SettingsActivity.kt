@@ -1,11 +1,17 @@
 package com.avichai98.smartreminder.activities
 
 import android.content.Intent
+import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
+import android.view.View
+import android.widget.EditText
+import android.widget.NumberPicker
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.avichai98.smartreminder.R
 import com.avichai98.smartreminder.adapters.CalendarAdapter
 import com.avichai98.smartreminder.databinding.ActivitySettingsBinding
 import com.avichai98.smartreminder.interfaces.GoogleCalendarApi
@@ -35,6 +41,15 @@ class SettingsActivity : AppCompatActivity() {
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val toolbar: com.google.android.material.appbar.MaterialToolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowHomeEnabled(true)
+        toolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+        toolbar.title = getString(R.string.settings)
+
         // Setup the RecyclerView
         binding.calendarRecyclerView.layoutManager = LinearLayoutManager(this)
 
@@ -61,7 +76,37 @@ class SettingsActivity : AppCompatActivity() {
             val (selectedCalendars, hoursBefore) =
                 MyRealtimeFirebase.getInstance().fetchUserPreferencesSuspend()
             previouslySelectedCalendars = selectedCalendars.toSet()
-            binding.etHoursBefore.setText(hoursBefore.toString())
+
+            binding.npHoursBefore.apply {
+                minValue = 1
+                maxValue = 100
+                wrapSelectorWheel = false
+
+                setFormatter { v -> String.format(java.util.Locale.getDefault(), "%d", v) }
+
+                val clamped = hoursBefore.coerceIn(minValue, maxValue)
+                value = clamped
+                post {
+                    value = clamped
+                    fixNumberPickerInput(this)
+                }
+            }
+        }
+    }
+
+    @Suppress("DiscouragedApi")
+    private fun fixNumberPickerInput(np: NumberPicker) {
+        try {
+            val id = Resources.getSystem().getIdentifier("numberpicker_input", "id", "android")
+            val input = np.findViewById<EditText>(id) ?: return
+            input.textDirection = View.TEXT_DIRECTION_LOCALE
+            input.textAlignment = View.TEXT_ALIGNMENT_CENTER
+            input.gravity = Gravity.CENTER
+            input.minEms = 3
+            input.setHorizontallyScrolling(false)
+            input.setPadding(0, 0, 0, 0)
+        } catch (_: Exception) {
+            Log.e("Settings", "Error fixing number picker input")
         }
     }
 
@@ -119,7 +164,7 @@ class SettingsActivity : AppCompatActivity() {
 
     // Save selected settings to Firebase
     private fun saveSettings() {
-        val hoursBefore = binding.etHoursBefore.text.toString().toIntOrNull() ?: 24
+        val hoursBefore = binding.npHoursBefore.value.coerceIn(1, 100)
         val selfReminder = binding.selfNotification.isChecked
 
         val selectedCalendarIds = mutableListOf<String>()

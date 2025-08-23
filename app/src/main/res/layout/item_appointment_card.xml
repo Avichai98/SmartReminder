@@ -27,7 +27,7 @@
         <!-- Appointment Organizer -->
         <TextView
             android:id="@+id/tvOrganizer"
-            android:text="Organizer: me"
+            android:text="@string/organizer_me"
             android:textSize="16sp"
             android:textColor="#666666"
             android:layout_marginTop="4dp"
@@ -74,14 +74,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp">
-
-
-        </LinearLayout>
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>

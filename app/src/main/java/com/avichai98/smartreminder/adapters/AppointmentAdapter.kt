@@ -12,6 +12,8 @@ class AppointmentAdapter(
     private val appointments: MutableList<Appointment>,
 ) : RecyclerView.Adapter<AppointmentAdapter.AppointmentViewHolder>() {
 
+    var onItemClick: ((Appointment) -> Unit)? = null
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppointmentViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_appointment_card, parent, false)
         return AppointmentViewHolder(view)
@@ -20,6 +22,7 @@ class AppointmentAdapter(
     override fun onBindViewHolder(holder: AppointmentViewHolder, position: Int) {
         val appointment = appointments[position]
         holder.bind(appointment)
+        holder.itemView.setOnClickListener { onItemClick?.invoke(appointment) }
     }
 
     override fun getItemCount() = appointments.size

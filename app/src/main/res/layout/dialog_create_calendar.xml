@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.textfield.TextInputLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tilCalendarName"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="4dp"
+    app:hintEnabled="true"
+    app:startIconDrawable="@drawable/outline_event_note_24">
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/etCalendarName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textCapWords"
+        android:hint="@string/enter_calendar_name"
+        android:maxLength="40"
+        android:imeOptions="actionDone"/>
+</com.google.android.material.textfield.TextInputLayout>

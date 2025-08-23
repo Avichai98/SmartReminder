@@ -2,6 +2,7 @@ package com.avichai98.smartreminder.models
 
 data class GoogleCalendarEvent(
     val id: String,
+    val iCalUID: String?,
     val summary: String?,
     val description: String?,
     val location: String?,

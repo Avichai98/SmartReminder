@@ -1,7 +1,8 @@
 package com.avichai98.smartreminder.models
 
 data class Appointment(
-    val eventId: String,                          // Google Calendar Event ID
+    val eventId: String,                         // Google Calendar Event ID
+    val iCalUID: String?,                        // Google Calendar iCal UID
     val summary: String?,                        // Event title
     val description: String?,                    // Event description
     val location: String?,                       // Location string
@@ -31,9 +32,5 @@ data class Appointment(
 
     fun getAttendeeEmails(): String {
         return attendees?.joinToString(", ") { it.email ?: "" } ?: ""
-    }
-
-    fun getOrganizerName(): String {
-        return organizer?.displayName ?: "Unknown"
     }
 }

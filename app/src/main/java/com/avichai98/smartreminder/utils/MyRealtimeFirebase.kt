@@ -45,12 +45,21 @@ class MyRealtimeFirebase private constructor(private val user: User) {
     }
 
     // Called when saving user preferences like calendar list and time
-    fun updatePreferences(selectedCalendars: List<String>, minutesBefore: Int, selfReminder: Boolean) {
+    fun updatePreferences(selectedCalendars: List<String>, hoursBefore: Int, selfReminder: Boolean) {
+        val updates = mapOf(
+            "selectedCalendarIds" to selectedCalendars,
+            "reminderHoursBefore" to hoursBefore,
+            "selfReminder" to selfReminder
+        )
+        userDatabaseReference
+            .child(user.uid)
+            .updateChildren(updates)
+            .addOnFailureListener { Log.e(TAG, "Failed to update user preferences: ${it.message}") }
+
+        // Update the internal user model with the new preferences
         user.selectedCalendarIds = selectedCalendars.toMutableList()
-        user.reminderHoursBefore = minutesBefore
+        user.reminderHoursBefore = hoursBefore
         user.selfReminder = selfReminder
-        setUser(user)
-        saveUser()
     }
 
     // Coroutine-based version
@@ -109,6 +118,8 @@ class MyRealtimeFirebase private constructor(private val user: User) {
 
     //Helper to update the internal user model with latest data from Firebase
     private fun setUser(updatedUser: User) {
+        user.uid = updatedUser.uid
+        user.email = updatedUser.email
         user.selectedCalendarIds = updatedUser.selectedCalendarIds
         user.reminderHoursBefore = updatedUser.reminderHoursBefore
         user.selfReminder = updatedUser.selfReminder
