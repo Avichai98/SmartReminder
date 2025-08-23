@@ -1,5 +1,5 @@
 [versions]
-agp = "8.12.0"
+agp = "8.12.1"
 androidActivation = "1.6.8"
 converterGson = "3.0.0"
 dotenvKotlin = "6.5.1"

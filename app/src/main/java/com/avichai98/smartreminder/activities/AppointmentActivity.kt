@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.provider.CalendarContract
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
@@ -59,6 +60,7 @@ class AppointmentActivity : AppCompatActivity() {
     private var calendarList: List<GoogleCalendar> = emptyList()
     private var selectedCalendarId: String = "primary"
     private var afterCalendarPermissionGranted: (() -> Unit)? = null
+    private var eventsObserver: android.database.ContentObserver? = null
 
     private val TAG = "HybridSignIn"
 
@@ -86,10 +88,7 @@ class AppointmentActivity : AppCompatActivity() {
             }
         }
         binding.rvAppointments.adapter = adapter
-
-
         binding.rvAppointments.layoutManager = LinearLayoutManager(this)
-        binding.rvAppointments.adapter = adapter
 
         binding.fabAddAppointment.setOnClickListener {
             val intent = Intent(Intent.ACTION_INSERT).apply {
@@ -107,6 +106,30 @@ class AppointmentActivity : AppCompatActivity() {
         setupLaunchers() // Initialize ActivityResultLauncher
         requestPermission("post_notifications")
     }
+
+    override fun onStart() {
+        super.onStart()
+        if (eventsObserver == null) {
+            eventsObserver = object : android.database.ContentObserver(android.os.Handler(mainLooper)) {
+                override fun onChange(selfChange: Boolean) {
+                    super.onChange(selfChange)
+                    fetchCalendarEvents()
+                }
+            }
+            contentResolver.registerContentObserver(
+                CalendarContract.Events.CONTENT_URI,
+                true,  // notifyForDescendants
+                eventsObserver!!
+            )
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        eventsObserver?.let { contentResolver.unregisterContentObserver(it) }
+        eventsObserver = null
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestPermission(action: String) {
@@ -271,22 +294,39 @@ class AppointmentActivity : AppCompatActivity() {
     }
 
     private fun fetchCalendarList() {
+        showLoading(true)
+        showList(false)
+        showEmpty(false)
+
         CoroutineScope(Dispatchers.Main).launch {
             val accessToken = utils.fetchAccessToken(this@AppointmentActivity)
-            if (accessToken != null) {
-                val retrofit = Retrofit.Builder()
-                    .baseUrl("https://www.googleapis.com/")
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build()
+            if (accessToken == null) {
+                showLoading(false)
+                if (adapter.itemCount == 0) showEmpty(true)
+                return@launch
+            }
 
-                val calendarApi = retrofit.create(GoogleCalendarApi::class.java)
+            val retrofit = Retrofit.Builder()
+                .baseUrl("https://www.googleapis.com/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
 
-                try {
-                    val response = calendarApi.getCalendarList("Bearer $accessToken")
-                    calendarList = response.items
-                    showCalendarPicker()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error fetching calendar list: ${e.localizedMessage}")
+            val calendarApi = retrofit.create(GoogleCalendarApi::class.java)
+
+            try {
+                val response = calendarApi.getCalendarList("Bearer $accessToken")
+                calendarList = response.items
+                showLoading(false)
+                showCalendarPicker()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching calendar list: ${e.localizedMessage}")
+                showLoading(false)
+                if (adapter.itemCount == 0) {
+                    showEmpty(true)
+                    showList(false)
+                } else {
+                    showEmpty(false)
+                    showList(true)
                 }
             }
         }
@@ -305,55 +345,81 @@ class AppointmentActivity : AppCompatActivity() {
     }
 
     private fun fetchCalendarEvents() {
+        // START UI STATE
+        showLoading(true)
+        showList(false)
+        showEmpty(false)
+
         CoroutineScope(Dispatchers.Main).launch {
             val accessToken = utils.fetchAccessToken(this@AppointmentActivity)
-            if (accessToken != null) {
-                val retrofit = Retrofit.Builder()
-                    .baseUrl("https://www.googleapis.com/")
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build()
+            if (accessToken == null) {
+                showLoading(false)
+                if (adapter.itemCount == 0) {
+                    showEmpty(true)
+                    showList(false)
+                }
+                Log.e(TAG, "Error: accessToken is null")
+                return@launch
+            }
 
-                val calendarApi = retrofit.create(GoogleCalendarApi::class.java)
+            val retrofit = Retrofit.Builder()
+                .baseUrl("https://www.googleapis.com/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
 
-                try {
-                    val response = calendarApi.getEvents(
-                        authHeader = "Bearer $accessToken",
-                        calendarId = selectedCalendarId, // Load from the selected calendar
-                        timeMin = getCurrentTimeIso()
-                    )
+            val calendarApi = retrofit.create(GoogleCalendarApi::class.java)
 
-                    appointments.clear()
-                    if (response.items.isNotEmpty()) {
-                        for (event in response.items) {
-                            // Create appointment
-                            appointments.add(
-                                Appointment(
-                                    eventId = event.id,
-                                    iCalUID = event.iCalUID,
-                                    summary = event.summary ?: "No Title",
-                                    start = event.start,
-                                    end = event.end,
-                                    organizer = event.organizer,
-                                    attendees = event.attendees ?: emptyList(), // Combine all emails as string
-                                    location = event.location ?: "No Location",
-                                    description = event.description ?: "No Description"
-                                )
+            try {
+                val response = calendarApi.getEvents(
+                    authHeader = "Bearer $accessToken",
+                    calendarId = selectedCalendarId,
+                    timeMin = getCurrentTimeIso()
+                )
+
+                appointments.clear()
+                if (response.items.isNotEmpty()) {
+                    for (event in response.items) {
+                        appointments.add(
+                            Appointment(
+                                eventId = event.id,
+                                iCalUID = event.iCalUID,
+                                summary = event.summary ?: "No Title",
+                                start = event.start,
+                                end = event.end,
+                                organizer = event.organizer,
+                                attendees = event.attendees ?: emptyList(),
+                                location = event.location ?: "No Location",
+                                description = event.description ?: "No Description"
                             )
-
-                            Log.d(TAG, "Event: ${event.summary} at ${event.start.dateTime}")
-                        }
-                        adapter.notifyDataSetChanged()
-                    } else {
-                        Log.d(TAG, "No upcoming events found.")
-                        adapter.notifyDataSetChanged()
+                        )
+                        Log.d(TAG, "Event: ${event.summary} at ${event.start.dateTime}")
                     }
+                }
 
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error fetching calendar events: ${e.localizedMessage}")
+                adapter.notifyDataSetChanged()
+                showLoading(false)
+                if (appointments.isEmpty()) {
+                    showEmpty(true)
+                    showList(false)
+                } else {
+                    showEmpty(false)
+                    showList(true)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching calendar events: ${e.localizedMessage}")
+
+                showLoading(false)
+                if (adapter.itemCount == 0) {
+                    showEmpty(true)
+                    showList(false)
+                } else {
+                    showEmpty(false)
+                    showList(true)
                 }
             }
         }
     }
+
 
     private fun getCurrentTimeIso(): String {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
@@ -447,5 +513,18 @@ class AppointmentActivity : AppCompatActivity() {
             afterCalendarPermissionGranted = then
             permissionsLauncher.launch(arrayOf(Manifest.permission.READ_CALENDAR))
         }
+    }
+
+    private fun showLoading(show: Boolean) {
+        binding.loadingView.root.visibility = if (show) View.VISIBLE else View.GONE
+        if (show) binding.emptyState.visibility = View.GONE
+    }
+
+    private fun showEmpty(show: Boolean) {
+        binding.emptyState.visibility = if (show) View.VISIBLE else View.GONE
+    }
+
+    private fun showList(show: Boolean) {
+        binding.rvAppointments.visibility = if (show) View.VISIBLE else View.INVISIBLE
     }
 }

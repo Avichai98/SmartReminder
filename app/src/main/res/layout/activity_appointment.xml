@@ -69,6 +69,14 @@
         </com.google.android.material.card.MaterialCardView>
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Loading overlay -->
+    <include
+        android:id="@+id/loadingView"
+        layout="@layout/layout_loading_state"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
     <!-- Content column: list fills space; bottom bar sits below it -->
     <LinearLayout
         android:id="@+id/contentColumn"
