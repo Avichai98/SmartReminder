@@ -47,4 +47,6 @@
     <string name="field_required">Field Required</string>
     <string name="failed_to_authenticate">Failed To Authenticate</string>
     <string name="action_failed_try_again">Action Failed Try Again</string>
+    <string name="failed_to_load_calendars">Faild To Load Calendars</string>
+    <string name="settings_saved">Settings Saved</string>
 </resources>

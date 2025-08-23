@@ -47,4 +47,6 @@
     <string name="field_required">שדה נדרש</string>
     <string name="failed_to_authenticate">אימות נכשל</string>
     <string name="action_failed_try_again">ניסיון נכשל, נסה שוב במועד מאוחר יותר</string>
+    <string name="failed_to_load_calendars">שגיאה בטעינת היומנים</string>
+    <string name="settings_saved">הגדרות נשמרו</string>
 </resources>

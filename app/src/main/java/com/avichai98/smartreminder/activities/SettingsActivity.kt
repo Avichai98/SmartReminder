@@ -36,6 +36,8 @@ class SettingsActivity : AppCompatActivity() {
     // Store previously selected calendar IDs to mark selected checkboxes
     private var previouslySelectedCalendars: Set<String> = emptySet()
 
+    private var loadingCounter = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
@@ -73,23 +75,30 @@ class SettingsActivity : AppCompatActivity() {
     // Load minutesBefore and previously selected calendars from Firebase
     private fun loadSettings() {
         CoroutineScope(Dispatchers.Main).launch {
-            val (selectedCalendars, hoursBefore) =
-                MyRealtimeFirebase.getInstance().fetchUserPreferencesSuspend()
-            previouslySelectedCalendars = selectedCalendars.toSet()
+            setLoading(true)
+            try {
+                val (selectedCalendars, hoursBefore) =
+                    MyRealtimeFirebase.getInstance().fetchUserPreferencesSuspend()
+                previouslySelectedCalendars = selectedCalendars.toSet()
 
-            binding.npHoursBefore.apply {
-                minValue = 1
-                maxValue = 100
-                wrapSelectorWheel = false
+                binding.npHoursBefore.apply {
+                    minValue = 1
+                    maxValue = 100
+                    wrapSelectorWheel = false
+                    setFormatter { v -> String.format(java.util.Locale.getDefault(), "%d", v) }
 
-                setFormatter { v -> String.format(java.util.Locale.getDefault(), "%d", v) }
-
-                val clamped = hoursBefore.coerceIn(minValue, maxValue)
-                value = clamped
-                post {
+                    val clamped = hoursBefore.coerceIn(minValue, maxValue)
                     value = clamped
-                    fixNumberPickerInput(this)
+                    post {
+                        value = clamped
+                        fixNumberPickerInput(this)
+                    }
                 }
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, R.string.action_failed_try_again, Toast.LENGTH_SHORT).show()
+                Log.e("Settings", "loadSettings error: ${e.message}")
+            } finally {
+                setLoading(false)
             }
         }
     }
@@ -113,24 +122,23 @@ class SettingsActivity : AppCompatActivity() {
     // Load available calendars from Google Calendar API
     private fun loadCalendars() {
         CoroutineScope(Dispatchers.Main).launch {
-            val accessToken = utils.fetchAccessToken(this@SettingsActivity)
-            if (accessToken == null) {
-                Toast.makeText(this@SettingsActivity, "Failed to fetch token", Toast.LENGTH_SHORT)
-                    .show()
-                return@launch
-            }
-
-            val calendarApi = Retrofit.Builder()
-                .baseUrl("https://www.googleapis.com/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-                .create(GoogleCalendarApi::class.java)
-
+            setLoading(true)
             try {
+                val accessToken = utils.fetchAccessToken(this@SettingsActivity)
+                if (accessToken == null) {
+                    Toast.makeText(this@SettingsActivity, R.string.failed_to_authenticate, Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                val calendarApi = Retrofit.Builder()
+                    .baseUrl("https://www.googleapis.com/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                    .create(GoogleCalendarApi::class.java)
+
                 val response = calendarApi.getCalendarList("Bearer $accessToken")
                 calendarItems.clear()
 
-                // Fill calendarItems list with calendar data
                 response.items.forEach { calendar ->
                     calendarItems.add(
                         CalendarItem(
@@ -141,41 +149,41 @@ class SettingsActivity : AppCompatActivity() {
                     )
                 }
 
-                // Display calendars in the RecyclerView
                 calendarAdapter.updateData(
                     calendarItems.map { it.summary },
-                    calendarItems.mapIndexedNotNull { index, item ->
-                        if (item.isSelected) index else null
-                    }.toSet()
+                    calendarItems.mapIndexedNotNull { index, item -> if (item.isSelected) index else null }.toSet()
                 )
-                binding.calendarRecyclerView.adapter = calendarAdapter
-
 
             } catch (e: Exception) {
-                Toast.makeText(
-                    this@SettingsActivity,
-                    "Failed to load calendars",
-                    Toast.LENGTH_SHORT
-                ).show()
-                Log.e("Settings", "Error loading calendars: ${e.message}")
+                Toast.makeText(this@SettingsActivity, R.string.failed_to_load_calendars, Toast.LENGTH_SHORT).show()
+                Log.e("Settings", "loadCalendars error: ${e.message}")
+            } finally {
+                setLoading(false)
             }
         }
     }
 
     // Save selected settings to Firebase
     private fun saveSettings() {
-        val hoursBefore = binding.npHoursBefore.value.coerceIn(1, 100)
-        val selfReminder = binding.selfNotification.isChecked
+        setLoading(true)
+        try {
+            val hoursBefore = binding.npHoursBefore.value.coerceIn(1, 100)
+            val selfReminder = binding.selfNotification.isChecked
 
-        val selectedCalendarIds = mutableListOf<String>()
-        calendarAdapter.getSelectedPositions().forEach { pos ->
-            selectedCalendarIds.add(calendarItems[pos].id)
+            val selectedCalendarIds = mutableListOf<String>()
+            calendarAdapter.getSelectedPositions().forEach { pos ->
+                selectedCalendarIds.add(calendarItems[pos].id)
+            }
+
+            MyRealtimeFirebase.getInstance()
+                .updatePreferences(selectedCalendarIds, hoursBefore, selfReminder)
+
+            Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show()
+        } finally {
+            setLoading(false)
         }
-
-        MyRealtimeFirebase.getInstance()
-            .updatePreferences(selectedCalendarIds, hoursBefore, selfReminder)
-        Toast.makeText(this, "Settings saved", Toast.LENGTH_SHORT).show()
     }
+
 
     private fun logout() {
         firebaseAuth = FirebaseAuth.getInstance()
@@ -186,5 +194,18 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
         }
+    }
+
+    private fun setLoading(active: Boolean) {
+        loadingCounter = if (active) loadingCounter + 1 else (loadingCounter - 1).coerceAtLeast(0)
+        val visible = loadingCounter > 0
+
+        binding.progress.visibility = if (visible) View.VISIBLE else View.GONE
+        binding.btnSaveSettings.isEnabled = !visible
+        binding.btnLogout.isEnabled = !visible
+
+        binding.calendarRecyclerView.alpha = if (visible) 0.5f else 1f
+        binding.npHoursBefore.alpha = if (visible) 0.5f else 1f
+        binding.selfNotification.alpha = if (visible) 0.5f else 1f
     }
 }
