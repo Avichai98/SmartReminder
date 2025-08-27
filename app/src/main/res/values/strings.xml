@@ -5,7 +5,7 @@
     <string name="save_settings">Save Settings</string>
     <string name="e_g_24">e.g. 24</string>
     <string name="hours_before_notification">Hours before notification:</string>
-    <string name="loading_appointments">Loading appointments...</string>
+    <string name="loading_appointments">Loading appointments…</string>
     <string name="no_appointments_available">No appointments available</string>
     <string name="update">Update</string>
     <string name="delete">Delete</string>
@@ -49,4 +49,5 @@
     <string name="action_failed_try_again">Action Failed Try Again</string>
     <string name="failed_to_load_calendars">Faild To Load Calendars</string>
     <string name="settings_saved">Settings Saved</string>
+    <string name="loading_calendars">Loading Calendars…</string>
 </resources>

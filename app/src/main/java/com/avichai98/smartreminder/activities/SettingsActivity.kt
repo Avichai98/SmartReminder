@@ -36,8 +36,6 @@ class SettingsActivity : AppCompatActivity() {
     // Store previously selected calendar IDs to mark selected checkboxes
     private var previouslySelectedCalendars: Set<String> = emptySet()
 
-    private var loadingCounter = 0
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
@@ -75,7 +73,8 @@ class SettingsActivity : AppCompatActivity() {
     // Load minutesBefore and previously selected calendars from Firebase
     private fun loadSettings() {
         CoroutineScope(Dispatchers.Main).launch {
-            setLoading(true)
+            binding.loadingView.tvLoading.setText(R.string.loading_calendars)
+            showLoading(true)
             try {
                 val (selectedCalendars, hoursBefore) =
                     MyRealtimeFirebase.getInstance().fetchUserPreferencesSuspend()
@@ -98,7 +97,7 @@ class SettingsActivity : AppCompatActivity() {
                 Toast.makeText(this@SettingsActivity, R.string.action_failed_try_again, Toast.LENGTH_SHORT).show()
                 Log.e("Settings", "loadSettings error: ${e.message}")
             } finally {
-                setLoading(false)
+                showLoading(false)
             }
         }
     }
@@ -122,7 +121,7 @@ class SettingsActivity : AppCompatActivity() {
     // Load available calendars from Google Calendar API
     private fun loadCalendars() {
         CoroutineScope(Dispatchers.Main).launch {
-            setLoading(true)
+            showLoading(true)
             try {
                 val accessToken = utils.fetchAccessToken(this@SettingsActivity)
                 if (accessToken == null) {
@@ -158,14 +157,14 @@ class SettingsActivity : AppCompatActivity() {
                 Toast.makeText(this@SettingsActivity, R.string.failed_to_load_calendars, Toast.LENGTH_SHORT).show()
                 Log.e("Settings", "loadCalendars error: ${e.message}")
             } finally {
-                setLoading(false)
+                showLoading(false)
             }
         }
     }
 
     // Save selected settings to Firebase
     private fun saveSettings() {
-        setLoading(true)
+        showLoading(true)
         try {
             val hoursBefore = binding.npHoursBefore.value.coerceIn(1, 100)
             val selfReminder = binding.selfNotification.isChecked
@@ -180,7 +179,7 @@ class SettingsActivity : AppCompatActivity() {
 
             Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show()
         } finally {
-            setLoading(false)
+            showLoading(false)
         }
     }
 
@@ -196,16 +195,16 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun setLoading(active: Boolean) {
-        loadingCounter = if (active) loadingCounter + 1 else (loadingCounter - 1).coerceAtLeast(0)
-        val visible = loadingCounter > 0
-
-        binding.progress.visibility = if (visible) View.VISIBLE else View.GONE
-        binding.btnSaveSettings.isEnabled = !visible
-        binding.btnLogout.isEnabled = !visible
-
-        binding.calendarRecyclerView.alpha = if (visible) 0.5f else 1f
-        binding.npHoursBefore.alpha = if (visible) 0.5f else 1f
-        binding.selfNotification.alpha = if (visible) 0.5f else 1f
+    private fun showLoading(show: Boolean) {
+        val v = binding.loadingView.root
+        if (show) {
+            v.alpha = 0f
+            v.visibility = View.VISIBLE
+            v.animate().alpha(1f).setDuration(150).start()
+        } else {
+            v.animate().alpha(0f).setDuration(150).withEndAction {
+                v.visibility = View.GONE
+            }.start()
+        }
     }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SmartReminder</string>
-    <string name="loading_appointments">טוען פגישות...</string>
+    <string name="loading_appointments">טוען פגישות…</string>
     <string name="no_appointments_available">לא קיימים אירועים</string>
     <string name="update">עדכן</string>
     <string name="delete">מחיקה</string>
@@ -49,4 +49,5 @@
     <string name="action_failed_try_again">ניסיון נכשל, נסה שוב במועד מאוחר יותר</string>
     <string name="failed_to_load_calendars">שגיאה בטעינת היומנים</string>
     <string name="settings_saved">הגדרות נשמרו</string>
+    <string name="loading_calendars">טוען יומנים…</string>
 </resources>

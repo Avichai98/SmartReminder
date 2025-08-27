@@ -294,6 +294,7 @@ class AppointmentActivity : AppCompatActivity() {
     }
 
     private fun fetchCalendarList() {
+        binding.loadingView.tvLoading.setText(R.string.loading_calendars)
         showLoading(true)
         showList(false)
         showEmpty(false)
@@ -346,6 +347,7 @@ class AppointmentActivity : AppCompatActivity() {
 
     private fun fetchCalendarEvents() {
         // START UI STATE
+        binding.loadingView.tvLoading.setText(R.string.loading_appointments)
         showLoading(true)
         showList(false)
         showEmpty(false)

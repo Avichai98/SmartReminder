@@ -132,12 +132,11 @@
             android:text="@string/logout"/>
     </LinearLayout>
 
-    <!-- Loading -->
-    <com.google.android.material.progressindicator.CircularProgressIndicator
-        android:id="@+id/progress"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_gravity="center"
-        app:trackColor="@color/primary"
-        android:visibility="gone"/>
+    <!-- Loading overlay -->
+    <include
+        android:id="@+id/loadingView"
+        layout="@layout/layout_loading_state"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
