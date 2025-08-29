@@ -29,6 +29,7 @@ import com.avichai98.smartreminder.interfaces.GoogleCalendarApi
 import com.avichai98.smartreminder.models.Appointment
 import com.avichai98.smartreminder.models.GoogleCalendar
 import com.avichai98.smartreminder.models.GoogleCalendarEvent
+import com.avichai98.smartreminder.utils.DateTimeUtils
 import com.avichai98.smartreminder.utils.MyRealtimeFirebase
 import com.avichai98.smartreminder.utils.Utils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -40,9 +41,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.TimeZone
 
 class AppointmentActivity : AppCompatActivity() {
@@ -417,11 +415,7 @@ class AppointmentActivity : AppCompatActivity() {
         }
     }
 
-
-    private fun getCurrentTimeIso(): String {
-        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
-        return sdf.format(Date())
-    }
+    private fun getCurrentTimeIso(): String = DateTimeUtils.nowIsoOffset()
 
     // RFC3339 "2025-08-23T10:00:00+03:00" -> millis
     private fun rfc3339ToMillis(dateTime: String?): Long? {

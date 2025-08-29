@@ -60,4 +60,9 @@
 בחרת "Don't allow". כדי להמשיך, אפשר את הרשאת היומן בהגדרות האפליקציה.
 </string>
     <string name="ok">אישור</string>
+    <string name="organizer_colon_value">מארגן: %1$s</string>
+    <string name="attendees_colon_value">משתתפים: %1$s</string>
+    <string name="location_colon_value">מיקום: %1$s</string>
+    <string name="duration_minutes_format">משך: %1$d דקות</string>
+    <string name="datetime_format">%1$s | %2$s</string>
 </resources>

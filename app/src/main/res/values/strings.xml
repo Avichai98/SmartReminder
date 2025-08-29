@@ -60,4 +60,9 @@ To open and edit this event in your Calendar app, the app needs read access to y
 You chose “Don’t allow”. To continue, enable Calendar permission in the app settings.
 </string>
     <string name="ok">OK</string>
+    <string name="organizer_colon_value">Organizer: %1$s</string>
+    <string name="attendees_colon_value">Attendees: %1$s</string>
+    <string name="location_colon_value">Location: %1$s</string>
+    <string name="duration_minutes_format">Duration: %1$d minutes</string>
+    <string name="datetime_format">%1$s | %2$s</string>
 </resources>

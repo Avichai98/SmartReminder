@@ -42,7 +42,8 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center"
-                    android:layout_marginTop="8dp">
+                    android:layout_marginTop="8dp"
+                    tools:ignore="UselessParent">
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnCreateCalendar"

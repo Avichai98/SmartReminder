@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.avichai98.smartreminder.R
+import com.avichai98.smartreminder.formatters.AppointmentFormatter
 import com.avichai98.smartreminder.models.Appointment
 
 class AppointmentAdapter(
@@ -39,13 +40,31 @@ class AppointmentAdapter(
             val ctx = itemView.context
 
             titleView.text = appointment.summary
-            organizerView.text = "${ctx.getString(R.string.organizer)}: ${appointment.organizer?.displayName ?: appointment.organizer?.email}"
-            dateTimeView.text = "${appointment.getStartDate()} | ${appointment.getStartTime()}"
-            attendeesView.text = "${ctx.getString(R.string.attendees)}: ${appointment.getAttendeeEmails()}"
-            val locationText = appointment.location
-            locationView.text = "${ctx.getString(R.string.location)}: $locationText"
-            durationView.text = "${ctx.getString(R.string.duration)}: ${appointment.getDurationMinutes()} ${ctx.getString(R.string.minutes)}"
+            organizerView.text = ctx.getString(
+                R.string.organizer_colon_value,
+                appointment.organizer?.displayName ?: appointment.organizer?.email ?: ""
+            )
 
+            dateTimeView.text = ctx.getString(
+                R.string.datetime_format,
+                AppointmentFormatter.localizedStartDate(ctx, appointment),
+                AppointmentFormatter.localizedStartTime(ctx, appointment)
+            )
+
+            attendeesView.text = ctx.getString(
+                R.string.attendees_colon_value,
+                appointment.getAttendeeEmails()
+            )
+
+            locationView.text = ctx.getString(
+                R.string.location_colon_value,
+                appointment.location.orEmpty()
+            )
+
+            durationView.text = ctx.getString(
+                R.string.duration_minutes_format,
+                appointment.getDurationMinutes()
+            )
         }
     }
 }
