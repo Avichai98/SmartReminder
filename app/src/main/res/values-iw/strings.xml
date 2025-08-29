@@ -42,7 +42,6 @@
     <string name="logout">התנתק</string>
     <string name="organizer_me">מארגן: אני</string>
     <string name="no_appointments">אין פגישות</string>
-    <string name="tap_plus_to_add">הקש פלוס להוספת פגישה</string>
     <string name="appointments">פגישות</string>
     <string name="field_required">שדה נדרש</string>
     <string name="failed_to_authenticate">אימות נכשל</string>
@@ -50,4 +49,15 @@
     <string name="failed_to_load_calendars">שגיאה בטעינת היומנים</string>
     <string name="settings_saved">הגדרות נשמרו</string>
     <string name="loading_calendars">טוען יומנים…</string>
+    <string name="permission_required">נדרשת הרשאה</string>
+    <string name="calendar_permission_rationale">הסבר הרשאת לוח שנה</string>
+    <string name="calendar_permission_title">נדרשת הרשאה ליומן</string>
+    <string name="calendar_permission_message">
+כדי לפתוח ולערוך את האירוע באפליקציית היומן שלך, האפליקציה צריכה גישה לקריאה ליומן במכשיר. אנחנו לא משנים את היומן שלך ללא פעולה יזומה, ותמיד אפשר לשנות זאת בהגדרות.
+</string>
+    <string name="open_settings_title">ההרשאה נדחתה</string>
+    <string name="open_settings_message">
+בחרת "Don't allow". כדי להמשיך, אפשר את הרשאת היומן בהגדרות האפליקציה.
+</string>
+    <string name="ok">אישור</string>
 </resources>

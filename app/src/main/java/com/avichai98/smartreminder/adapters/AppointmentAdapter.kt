@@ -39,10 +39,10 @@ class AppointmentAdapter(
             val ctx = itemView.context
 
             titleView.text = appointment.summary
-            organizerView.text = "${ctx.getString(R.string.organizer)}: ${appointment.organizer?.displayName ?: "Unknown"}"
+            organizerView.text = "${ctx.getString(R.string.organizer)}: ${appointment.organizer?.displayName ?: appointment.organizer?.email}"
             dateTimeView.text = "${appointment.getStartDate()} | ${appointment.getStartTime()}"
             attendeesView.text = "${ctx.getString(R.string.attendees)}: ${appointment.getAttendeeEmails()}"
-            val locationText = appointment.location ?: ctx.getString(R.string.location_not_defined)
+            val locationText = appointment.location
             locationView.text = "${ctx.getString(R.string.location)}: $locationText"
             durationView.text = "${ctx.getString(R.string.duration)}: ${appointment.getDurationMinutes()} ${ctx.getString(R.string.minutes)}"
 

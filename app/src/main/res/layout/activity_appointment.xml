@@ -148,12 +148,6 @@
             android:text="@string/no_appointments"
             android:textStyle="bold"
             android:textSize="16sp" />
-
-        <com.google.android.material.textview.MaterialTextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/tap_plus_to_add" />
     </LinearLayout>
 
     <!-- Loading indicator centered over list -->

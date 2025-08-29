@@ -42,7 +42,6 @@
     <string name="logout">Logout</string>
     <string name="organizer_me">Organizer: me</string>
     <string name="no_appointments">No Appointments</string>
-    <string name="tap_plus_to_add">Tap Plus To Add</string>
     <string name="appointments">Appointments</string>
     <string name="field_required">Field Required</string>
     <string name="failed_to_authenticate">Failed To Authenticate</string>
@@ -50,4 +49,15 @@
     <string name="failed_to_load_calendars">Faild To Load Calendars</string>
     <string name="settings_saved">Settings Saved</string>
     <string name="loading_calendars">Loading Calendars…</string>
+    <string name="permission_required">Permission Required</string>
+    <string name="calendar_permission_rationale">Calendar Permission Rationale</string>
+    <string name="calendar_permission_title">Calendar access required</string>
+    <string name="calendar_permission_message">
+To open and edit this event in your Calendar app, the app needs read access to your device calendar. We never modify your calendar without you, and you can change this anytime in Settings.
+</string>
+    <string name="open_settings_title">Permission denied</string>
+    <string name="open_settings_message">
+You chose “Don’t allow”. To continue, enable Calendar permission in the app settings.
+</string>
+    <string name="ok">OK</string>
 </resources>

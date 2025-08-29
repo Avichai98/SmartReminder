@@ -53,16 +53,16 @@ class AppointmentActivity : AppCompatActivity() {
     private val utils = Utils()
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private val POST_NOTIFICATION_PERMISSION = Manifest.permission.POST_NOTIFICATIONS
     private lateinit var calendarLauncher: ActivityResultLauncher<Intent>
     private lateinit var permissionsLauncher: ActivityResultLauncher<Array<String>>
-    private var pendingAction: String? = null // Stores the action to perform after permission is granted
+    private var pendingAction: String? =
+        null // Stores the action to perform after permission is granted
     private var calendarList: List<GoogleCalendar> = emptyList()
     private var selectedCalendarId: String = "primary"
     private var afterCalendarPermissionGranted: (() -> Unit)? = null
     private var eventsObserver: android.database.ContentObserver? = null
 
-    private val TAG = "HybridSignIn"
+    private val tag = "HybridSignIn"
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -104,23 +104,13 @@ class AppointmentActivity : AppCompatActivity() {
         }
 
         setupLaunchers() // Initialize ActivityResultLauncher
-        requestPermission("post_notifications")
+        //requestPermission("post_notifications")
     }
 
     override fun onStart() {
         super.onStart()
-        if (eventsObserver == null) {
-            eventsObserver = object : android.database.ContentObserver(android.os.Handler(mainLooper)) {
-                override fun onChange(selfChange: Boolean) {
-                    super.onChange(selfChange)
-                    fetchCalendarEvents()
-                }
-            }
-            contentResolver.registerContentObserver(
-                CalendarContract.Events.CONTENT_URI,
-                true,  // notifyForDescendants
-                eventsObserver!!
-            )
+        if (hasCalendarPermission()) {
+            registerEventsObserverIfNeeded()
         }
     }
 
@@ -128,25 +118,6 @@ class AppointmentActivity : AppCompatActivity() {
         super.onStop()
         eventsObserver?.let { contentResolver.unregisterContentObserver(it) }
         eventsObserver = null
-    }
-
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun requestPermission(action: String) {
-        pendingAction = action
-
-        when (action) {
-            "post_notifications" -> {
-                if (ContextCompat.checkSelfPermission(this, POST_NOTIFICATION_PERMISSION)
-                    != PackageManager.PERMISSION_GRANTED
-                ) {
-                    permissionsLauncher.launch(arrayOf(POST_NOTIFICATION_PERMISSION))
-                } else {
-
-                }
-            }
-            else -> Log.e("AppointmentActivity", "Invalid action: $action")
-        }
     }
 
     private fun showCreateCalendarDialog() {
@@ -176,11 +147,14 @@ class AppointmentActivity : AppCompatActivity() {
             validate()
             btn.setOnClickListener {
                 val name = et.text?.toString()?.trim().orEmpty()
-                if (name.isBlank()) { validate(); return@setOnClickListener }
+                if (name.isBlank()) {
+                    validate(); return@setOnClickListener
+                }
 
                 CoroutineScope(Dispatchers.Main).launch {
                     try {
-                        val token = withContext(Dispatchers.IO) { utils.fetchAccessToken(this@AppointmentActivity) }
+                        val token =
+                            withContext(Dispatchers.IO) { utils.fetchAccessToken(this@AppointmentActivity) }
                         if (token.isNullOrEmpty()) {
                             til.error = getString(R.string.failed_to_authenticate)
                             return@launch
@@ -202,77 +176,98 @@ class AppointmentActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun setupLaunchers() {
-        calendarLauncher = registerForActivityResult(
-            StartActivityForResult()
-        ) { result: ActivityResult ->
-            if (result.resultCode == RESULT_OK) {
-                val account = Account(MyRealtimeFirebase.getInstance().getCurrentUserEmail(), "com.google")
-                val authority = "com.android.calendar"
-
-                val extras = Bundle().apply {
-                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                    putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+        calendarLauncher =
+            registerForActivityResult(StartActivityForResult()) { result: ActivityResult ->
+                if (result.resultCode == RESULT_OK) {
+                    val account = Account(
+                        MyRealtimeFirebase.getInstance().getCurrentUserEmail(),
+                        "com.google"
+                    )
+                    val authority = "com.android.calendar"
+                    val extras = Bundle().apply {
+                        putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                        putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                    }
+                    ContentResolver.requestSync(account, authority, extras)
                 }
-
-                ContentResolver.requestSync(account, authority, extras)
             }
-        }
 
         permissionsLauncher = registerForActivityResult(RequestMultiplePermissions()) { result ->
-            var allGranted = true
-            var shouldShowRationale = false
-
-            for ((permission, granted) in result) {
-                if (!granted) {
-                    allGranted = false
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
-                        shouldShowRationale = true
-                    }
-                }
-            }
+            val allGranted = result.values.all { it }
+            val action = pendingAction
+            pendingAction = null
 
             if (allGranted) {
-                when (pendingAction) {
+                when (action) {
                     "read_calendar" -> {
+                        registerEventsObserverIfNeeded()
                         afterCalendarPermissionGranted?.invoke()
                         afterCalendarPermissionGranted = null
                     }
-                 //   "post_notifications" ->
+                    // "post_notifications" – if needed
                 }
-            } else if (shouldShowRationale) {
-                showPermissionRationaleDialog()
-            } else {
-                showSettingsDialog()
+                return@registerForActivityResult
             }
 
-            pendingAction = null
+            // Here we know that all permissions are denied
+            when (action) {
+                "read_calendar" -> {
+                    //  WITHOUT "Don't ask again"
+                    val needRationale = ActivityCompat.shouldShowRequestPermissionRationale(
+                        this, Manifest.permission.READ_CALENDAR
+                    )
+                    if (needRationale) {
+                        showPermissionRationaleDialogForReadCalendar(
+                            onApprove = {
+                                pendingAction = "read_calendar"
+                                permissionsLauncher.launch(arrayOf(Manifest.permission.READ_CALENDAR))
+                            }
+                        )
+                    } else {
+                        // Don't ask again
+                        showSettingsDialog()
+                    }
+                    afterCalendarPermissionGranted = null
+                }
+
+                "post_notifications" -> {
+                    val needRationale = ActivityCompat.shouldShowRequestPermissionRationale(
+                        this, Manifest.permission.POST_NOTIFICATIONS
+                    )
+                    if (needRationale) {
+                        showPermissionRationaleDialogGeneric(
+                            title = getString(R.string.calendar_permission_title),
+                            message = getString(R.string.calendar_permission_message),
+                            onApprove = {
+                                pendingAction = "post_notifications"
+                                permissionsLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
+                            }
+                        )
+                    } else {
+                        showSettingsDialog()
+                    }
+                }
+            }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun showPermissionRationaleDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Permission Required")
-            .setMessage("This permission is needed for the reminders to work.")
-            .setPositiveButton("OK") { _, _ ->
-                requestPermission(pendingAction ?: "")
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
     private fun showSettingsDialog() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.permission_denied)
-            .setMessage(R.string.after_permission_denied)
-            .setPositiveButton(R.string.open_settings) { _, _ ->
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(getString(R.string.open_settings_title))
+            .setMessage(getString(R.string.open_settings_message))
+            .setPositiveButton(getString(R.string.open_settings)) { d, _ ->
+                d.dismiss()
                 val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                 val uri = android.net.Uri.fromParts("package", packageName, null)
                 intent.data = uri
                 startActivity(intent)
             }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+            .setNegativeButton(getString(R.string.cancel)) { d, _ -> d.dismiss() }
+            .create()
+
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.setCancelable(false)
+        dialog.show()
     }
 
     private suspend fun createNewCalendar(name: String, accessToken: String) {
@@ -287,9 +282,9 @@ class AppointmentActivity : AppCompatActivity() {
                 "timeZone" to TimeZone.getDefault().id
             )
             val response = calendarApi.createCalendar("Bearer $accessToken", newCalendar)
-            Log.d(TAG, "Calendar created: ${response.id}")
+            Log.d(tag, "Calendar created: ${response.id}")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to create calendar: ${e.localizedMessage}")
+            Log.e(tag, "Failed to create calendar: ${e.localizedMessage}")
         }
     }
 
@@ -320,7 +315,7 @@ class AppointmentActivity : AppCompatActivity() {
                 showLoading(false)
                 showCalendarPicker()
             } catch (e: Exception) {
-                Log.e(TAG, "Error fetching calendar list: ${e.localizedMessage}")
+                Log.e(tag, "Error fetching calendar list: ${e.localizedMessage}")
                 showLoading(false)
                 if (adapter.itemCount == 0) {
                     showEmpty(true)
@@ -360,7 +355,7 @@ class AppointmentActivity : AppCompatActivity() {
                     showEmpty(true)
                     showList(false)
                 }
-                Log.e(TAG, "Error: accessToken is null")
+                Log.e(tag, "Error: accessToken is null")
                 return@launch
             }
 
@@ -385,16 +380,16 @@ class AppointmentActivity : AppCompatActivity() {
                             Appointment(
                                 eventId = event.id,
                                 iCalUID = event.iCalUID,
-                                summary = event.summary ?: "No Title",
+                                summary = event.summary ?: "",
                                 start = event.start,
                                 end = event.end,
                                 organizer = event.organizer,
                                 attendees = event.attendees ?: emptyList(),
-                                location = event.location ?: "No Location",
-                                description = event.description ?: "No Description"
+                                location = event.location ?: "",
+                                description = event.description ?: ""
                             )
                         )
-                        Log.d(TAG, "Event: ${event.summary} at ${event.start.dateTime}")
+                        Log.d(tag, "Event: ${event.summary} at ${event.start.dateTime}")
                     }
                 }
 
@@ -408,7 +403,7 @@ class AppointmentActivity : AppCompatActivity() {
                     showList(true)
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error fetching calendar events: ${e.localizedMessage}")
+                Log.e(tag, "Error fetching calendar events: ${e.localizedMessage}")
 
                 showLoading(false)
                 if (adapter.itemCount == 0) {
@@ -431,7 +426,11 @@ class AppointmentActivity : AppCompatActivity() {
     // RFC3339 "2025-08-23T10:00:00+03:00" -> millis
     private fun rfc3339ToMillis(dateTime: String?): Long? {
         if (dateTime.isNullOrBlank()) return null
-        return try { java.time.Instant.parse(dateTime).toEpochMilli() } catch (_: Exception) { null }
+        return try {
+            java.time.Instant.parse(dateTime).toEpochMilli()
+        } catch (_: Exception) {
+            null
+        }
     }
 
     // All-day "yyyy-MM-dd" -> start of day millis
@@ -441,7 +440,9 @@ class AppointmentActivity : AppCompatActivity() {
             java.time.LocalDate.parse(date)
                 .atStartOfDay(java.time.ZoneId.systemDefault())
                 .toInstant().toEpochMilli()
-        } catch (_: Exception) { null }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun eventStartMillis(e: GoogleCalendarEvent): Long? =
@@ -474,7 +475,10 @@ class AppointmentActivity : AppCompatActivity() {
     }
 
     private fun editLocalCalendarEvent(localEventId: Long, beginMillis: Long?, endMillis: Long?) {
-        val uri = android.content.ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, localEventId)
+        val uri = android.content.ContentUris.withAppendedId(
+            CalendarContract.Events.CONTENT_URI,
+            localEventId
+        )
         val intent = Intent(Intent.ACTION_EDIT).setData(uri).apply {
             beginMillis?.let { putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, it) }
             endMillis?.let { putExtra(CalendarContract.EXTRA_EVENT_END_TIME, it) }
@@ -504,16 +508,29 @@ class AppointmentActivity : AppCompatActivity() {
     }
 
     private fun ensureReadCalendarPermission(then: () -> Unit) {
-        val granted = ContextCompat.checkSelfPermission(
-            this, Manifest.permission.READ_CALENDAR
-        ) == PackageManager.PERMISSION_GRANTED
+        val perm = Manifest.permission.READ_CALENDAR
 
-        if (granted) {
+        if (ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED) {
             then()
+            return
+        }
+
+        val needRationale = ActivityCompat.shouldShowRequestPermissionRationale(this, perm)
+        if (needRationale) {
+            AlertDialog.Builder(this)
+                .setTitle(getString(R.string.permission_required))
+                .setMessage(getString(R.string.calendar_permission_rationale))
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    pendingAction = "read_calendar"
+                    afterCalendarPermissionGranted = then
+                    permissionsLauncher.launch(arrayOf(perm))
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
         } else {
             pendingAction = "read_calendar"
             afterCalendarPermissionGranted = then
-            permissionsLauncher.launch(arrayOf(Manifest.permission.READ_CALENDAR))
+            permissionsLauncher.launch(arrayOf(perm))
         }
     }
 
@@ -528,5 +545,68 @@ class AppointmentActivity : AppCompatActivity() {
 
     private fun showList(show: Boolean) {
         binding.rvAppointments.visibility = if (show) View.VISIBLE else View.INVISIBLE
+    }
+
+    private fun registerEventsObserverIfNeeded() {
+        if (!hasCalendarPermission()) return
+        if (eventsObserver != null) return
+
+        eventsObserver = object : android.database.ContentObserver(android.os.Handler(mainLooper)) {
+            override fun onChange(selfChange: Boolean) {
+                super.onChange(selfChange)
+                fetchCalendarEvents()
+            }
+        }
+        contentResolver.registerContentObserver(
+            CalendarContract.Events.CONTENT_URI,
+            true,  // notifyForDescendants
+            eventsObserver!!
+        )
+    }
+
+    private fun hasCalendarPermission(): Boolean =
+        ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_CALENDAR
+        ) == PackageManager.PERMISSION_GRANTED
+
+    private fun showPermissionRationaleDialogForReadCalendar(onApprove: () -> Unit) {
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(getString(R.string.calendar_permission_title))
+            .setMessage(getString(R.string.calendar_permission_message))
+            .setPositiveButton(getString(R.string.ok)) { d, _ ->
+                d.dismiss()
+                onApprove()
+            }
+            .setNegativeButton(getString(R.string.cancel)) { d, _ ->
+                d.dismiss()
+            }
+            .create()
+
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.setCancelable(false)
+        dialog.show()
+    }
+
+    private fun showPermissionRationaleDialogGeneric(
+        title: String,
+        message: String,
+        onApprove: () -> Unit
+    ) {
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton(getString(R.string.ok)) { d, _ ->
+                d.dismiss()
+                onApprove()
+            }
+            .setNegativeButton(getString(R.string.cancel)) { d, _ ->
+                d.dismiss()
+            }
+            .create()
+
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.setCancelable(false)
+        dialog.show()
     }
 }

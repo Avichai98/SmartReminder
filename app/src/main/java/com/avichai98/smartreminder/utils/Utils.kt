@@ -8,7 +8,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.avichai98.smartreminder.workers.AppointmentReminderWorker
+import com.avichai98.smartreminder.services.AppointmentReminderWorker
 import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import kotlinx.coroutines.Dispatchers

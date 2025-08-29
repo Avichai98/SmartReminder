@@ -1,4 +1,4 @@
-package com.avichai98.smartreminder.workers
+package com.avichai98.smartreminder.services
 
 import android.content.Context
 import android.util.Log
@@ -20,7 +20,7 @@ class AppointmentReminderWorker(
     params: WorkerParameters
 ) : CoroutineWorker(appContext, params) {
 
-    private val TAG = "ReminderWorker"
+    private val tag = "ReminderWorker"
     private val utils = Utils()
     private val emailSender = EmailSender()
 
@@ -35,16 +35,16 @@ class AppointmentReminderWorker(
 
             return Result.success()
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to check appointments: ${e.message}")
+            Log.e(tag, "Failed to check appointments: ${e.message}")
             return Result.retry()
         }
     }
 
     private suspend fun checkUpcomingAppointments(calendarId: String, timeBeforeHours: Int, selfReminder: Boolean) {
-        Log.d(TAG, "Checking appointments for $calendarId")
+        Log.d(tag, "Checking appointments for $calendarId")
 
         val accessToken = utils.fetchAccessToken(applicationContext) ?: run {
-            Log.e(TAG, "Access token null")
+            Log.e(tag, "Access token null")
             return
         }
 
@@ -66,7 +66,7 @@ class AppointmentReminderWorker(
                 timeMax = timeMax
             )
 
-            Log.d(TAG, "Found ${response.items.size} events for $calendarId")
+            Log.d(tag, "Found ${response.items.size} events for $calendarId")
 
             for (event in response.items) {
                 val reminderAlreadySent = withContext(Dispatchers.IO) {
@@ -80,7 +80,7 @@ class AppointmentReminderWorker(
                 if (isPrimary && event.organizer?.email != MyRealtimeFirebase.getInstance().getCurrentUserEmail())
                     continue
 
-                val title = event.summary ?: "No title"
+                val title = event.summary ?: continue
                 val time = event.start.dateTime ?: continue
                 val attendees = event.attendees?.mapNotNull { it.email } ?: emptyList()
 
@@ -96,7 +96,8 @@ class AppointmentReminderWorker(
                         body = "This is a reminder for \"$title\" scheduled at $time",
                         recipientEmail = email
                     )
-                    if (!sent) allEmailsSent = false
+                    if (!sent)
+                        allEmailsSent = false
                 }
 
                 if (allEmailsSent) {
@@ -105,7 +106,7 @@ class AppointmentReminderWorker(
             }
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking appointments: ${e.message}")
+            Log.e(tag, "Error checking appointments: ${e.message}")
         }
     }
 }
