@@ -54,8 +54,17 @@ class SettingsActivity : AppCompatActivity() {
         binding.calendarRecyclerView.layoutManager = LinearLayoutManager(this)
 
         calendarAdapter = CalendarAdapter(
-            mutableListOf(),
-            mutableSetOf()
+            calendars = mutableListOf(),
+            selectedPositions = mutableSetOf(),
+            maxSelectable = 2, // <-- free plan: up to 2 calendars for reminders
+            onSelectionLimitReached = {
+                // Show a friendly message when user tries to select a 3rd calendar
+                Toast.makeText(
+                    this,
+                    getString(R.string.calendar_select_limit_toast, 2),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         )
         binding.calendarRecyclerView.adapter = calendarAdapter
 

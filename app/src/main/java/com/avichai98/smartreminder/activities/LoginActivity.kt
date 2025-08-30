@@ -3,6 +3,7 @@ package com.avichai98.smartreminder.activities
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.credentials.*
@@ -31,8 +32,8 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityLoginBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_login)
+        binding = ActivityLoginBinding.bind(findViewById(R.id.loginContainer))
 
         firebaseAuth = FirebaseAuth.getInstance()
         credentialManager = CredentialManager.create(this)
@@ -46,6 +47,10 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun signInWithCredentialManager() {
+        binding.btnGoogleSignIn.isEnabled = false
+        //binding.progress.visibility = View.VISIBLE
+        showLoading(true)
+
         // Option for new sign-in
         val signInOption = GetSignInWithGoogleOption.Builder(getString(R.string.default_web_client_id))
             .build()
@@ -83,15 +88,24 @@ class LoginActivity : AppCompatActivity() {
                     } catch (e: GoogleIdTokenParsingException) {
                         Log.e(TAG, "Received an invalid Google ID token response", e)
                         showError("Invalid Google credential")
+                        //binding.progress.visibility = View.GONE
+                        showLoading(false)
+                        binding.btnGoogleSignIn.isEnabled = true
                     }
                 } else {
                     Log.e(TAG, "Unexpected credential type: ${credential.type}")
                     showError("Unexpected credential type")
+                    //binding.progress.visibility = View.GONE
+                    showLoading(false)
+                    binding.btnGoogleSignIn.isEnabled = true
                 }
             }
             else -> {
                 Log.e(TAG, "Unexpected credential type")
                 showError("Unexpected credential type")
+                //binding.progress.visibility = View.GONE
+                showLoading(false)
+                binding.btnGoogleSignIn.isEnabled = true
             }
         }
     }
@@ -118,6 +132,9 @@ class LoginActivity : AppCompatActivity() {
                 } else {
                     Log.e(TAG, "Firebase authentication failed", task.exception)
                     showError("Authentication failed")
+                    //binding.progress.visibility = View.GONE
+                    showLoading(false)
+                    binding.btnGoogleSignIn.isEnabled = true
                 }
             }
     }
@@ -166,5 +183,21 @@ class LoginActivity : AppCompatActivity() {
 
     private fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        //binding.progress.visibility = View.GONE
+        showLoading(false)
+        binding.btnGoogleSignIn.isEnabled = true
+    }
+
+    private fun showLoading(show: Boolean) {
+        val v = binding.loadingView.root
+        if (show) {
+            v.alpha = 0f
+            v.visibility = View.VISIBLE
+            v.animate().alpha(1f).setDuration(150).start()
+        } else {
+            v.animate().alpha(0f).setDuration(150).withEndAction {
+                v.visibility = View.GONE
+            }.start()
+        }
     }
 }

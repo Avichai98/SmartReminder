@@ -57,7 +57,7 @@ To open and edit this event in your Calendar app, the app needs read access to y
 </string>
     <string name="open_settings_title">Permission denied</string>
     <string name="open_settings_message">
-You chose “Don’t allow”. To continue, enable Calendar permission in the app settings.
+You chose "Don’t allow". To continue, please enable Calendar permission in your device settings.
 </string>
     <string name="ok">OK</string>
     <string name="organizer_colon_value">Organizer: %1$s</string>
@@ -65,4 +65,16 @@ You chose “Don’t allow”. To continue, enable Calendar permission in the ap
     <string name="location_colon_value">Location: %1$s</string>
     <string name="duration_minutes_format">Duration: %1$d minutes</string>
     <string name="datetime_format">%1$s | %2$s</string>
+    <string name="app_logo">App logo</string>
+    <string name="login_headline">Never miss a meeting again</string>
+    <string name="login_subhead">Smart reminders synced with your Google Calendar</string>
+    <string name="benefit_sync">Seamless sync with Google Calendar</string>
+    <string name="benefit_reminders">Smart reminders for you and attendees</string>
+    <string name="benefit_privacy">Your data stays private</string>
+    <string name="login_privacy_note">We use your Google Calendar only to read upcoming events and send reminders. Nothing is shared.</string>
+    <string name="terms">Terms</string>
+    <string name="privacy">Privacy</string>
+    <string name="dot">•</string>
+    <string name="calendar_select_limit_toast">You can select up to %1$d calendars for reminders.</string>
+    <string name="login">Login</string>
 </resources>

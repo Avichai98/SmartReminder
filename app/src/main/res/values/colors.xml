@@ -24,4 +24,6 @@
     <!-- Floating Action Button Colors -->
     <color name="fab_bg">#6200EE</color> <!-- Material Purple -->
     <color name="fab_icon">#FFFFFF</color>
+
+    <color name="gradient_soft_tint">#116200EE</color>
 </resources>

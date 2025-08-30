@@ -1,32 +1,190 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/loginContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp"
     tools:context=".activities.LoginActivity">
 
-    <!-- Google Sign-In Button (Material Design) -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnGoogleSignIn"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/sign_in_with_google"
-        android:textAllCaps="false"
-        android:textColor="@color/black"
-        app:backgroundTint="@color/white"
-        app:cornerRadius="24dp"
-        app:icon="@drawable/googleg_standard_color_18"
-        app:iconGravity="textStart"
-        app:iconPadding="8dp"
-        app:iconTint="@android:color/transparent"
-        app:iconTintMode="src_atop"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:strokeColor="@color/black"
-        app:strokeWidth="1dp" />
+    <!-- App bar -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:title="@string/login" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- toolbar -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:background="@drawable/bg_login_gradient"
+        android:padding="24dp">
+
+        <!-- Decorative app mark at the top (optional) -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imgHero"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:contentDescription="@string/app_logo"
+            android:src="@drawable/ic_notification"
+            app:tint="?attr/colorPrimary"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Center Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardUseCompatPadding="true"
+            app:layout_constraintTop_toBottomOf="@id/imgHero"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/footerLinks">
+
+            <LinearLayout
+                android:id="@+id/cardContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <!-- Headline -->
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvHeadline"
+                    style="@style/TextAppearance.Material3.HeadlineMedium"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAlignment="center"
+                    android:text="@string/login_headline"/>
+
+                <!-- Subhead -->
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvSubhead"
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAlignment="center"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:text="@string/login_subhead"
+                    android:layout_marginTop="6dp"/>
+
+                <!-- Benefits -->
+                <LinearLayout
+                    android:id="@+id/benefits"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="14dp">
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/TextAppearance.Material3.BodyMedium"
+                        android:drawableStart="@drawable/ic_check_24"
+                        android:drawablePadding="8dp"
+                        android:text="@string/benefit_sync"/>
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/TextAppearance.Material3.BodyMedium"
+                        android:drawableStart="@drawable/ic_check_24"
+                        android:drawablePadding="8dp"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/benefit_reminders"/>
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/TextAppearance.Material3.BodyMedium"
+                        android:drawableStart="@drawable/ic_check_24"
+                        android:drawablePadding="8dp"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/benefit_privacy"/>
+                </LinearLayout>
+
+                <!-- Google Sign-In Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnGoogleSignIn"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sign_in_with_google"
+                    android:textAllCaps="false"
+                    android:insetTop="12dp"
+                    android:insetBottom="12dp"
+                    app:icon="@drawable/googleg_standard_color_18"
+                    app:iconSize="18dp"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp"
+                    app:iconTint="@null"
+                    app:strokeColor="?attr/colorOutline"
+                    app:strokeWidth="1dp"
+                    android:layout_marginTop="16dp"/>
+
+                <!-- Tiny privacy note -->
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvPrivacy"
+                    style="@style/TextAppearance.Material3.BodySmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAlignment="center"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:text="@string/login_privacy_note"
+                    android:layout_marginTop="8dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Footer links -->
+        <LinearLayout
+            android:id="@+id/footerLinks"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/btnTerms"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/terms"
+                android:textColor="?attr/colorPrimary"/>
+
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/dot"
+                android:paddingHorizontal="6dp"
+                android:textColor="?attr/colorOnSurfaceVariant"/>
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/btnPrivacy"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/privacy"
+                android:textColor="?attr/colorPrimary"/>
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Loading overlay -->
+    <include
+        android:id="@+id/loadingView"
+        layout="@layout/layout_loading_state"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
