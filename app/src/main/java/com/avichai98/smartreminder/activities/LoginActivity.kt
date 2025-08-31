@@ -21,6 +21,7 @@ import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 class LoginActivity : AppCompatActivity() {
 
@@ -28,7 +29,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var credentialManager: CredentialManager
 
-    private val TAG = "GoogleSignIn"
+    private val tag = "GoogleSignIn"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +41,13 @@ class LoginActivity : AppCompatActivity() {
 
         binding.btnGoogleSignIn.setOnClickListener {
             signInWithCredentialManager()
+        }
+
+        binding.btnTerms.setOnClickListener {
+            openExternalLink(getString(R.string.terms_url))
+        }
+        binding.btnPrivacy.setOnClickListener {
+            openExternalLink(getString(R.string.privacy_url))
         }
 
         // Check if the user is already signed in
@@ -74,7 +82,7 @@ class LoginActivity : AppCompatActivity() {
             is GoogleIdTokenCredential -> {
                 // Handle Google ID Token credential
                 val idToken = credential.idToken
-                Log.d(TAG, "Google ID Token received")
+                Log.d(tag, "Google ID Token received")
                 firebaseAuthWithGoogle(idToken)
             }
             is CustomCredential -> {
@@ -83,17 +91,17 @@ class LoginActivity : AppCompatActivity() {
                         val googleIdTokenCredential = GoogleIdTokenCredential
                             .createFrom(credential.data)
                         val idToken = googleIdTokenCredential.idToken
-                        Log.d(TAG, "Custom Google ID Token received")
+                        Log.d(tag, "Custom Google ID Token received")
                         firebaseAuthWithGoogle(idToken)
                     } catch (e: GoogleIdTokenParsingException) {
-                        Log.e(TAG, "Received an invalid Google ID token response", e)
+                        Log.e(tag, "Received an invalid Google ID token response", e)
                         showError("Invalid Google credential")
                         //binding.progress.visibility = View.GONE
                         showLoading(false)
                         binding.btnGoogleSignIn.isEnabled = true
                     }
                 } else {
-                    Log.e(TAG, "Unexpected credential type: ${credential.type}")
+                    Log.e(tag, "Unexpected credential type: ${credential.type}")
                     showError("Unexpected credential type")
                     //binding.progress.visibility = View.GONE
                     showLoading(false)
@@ -101,7 +109,7 @@ class LoginActivity : AppCompatActivity() {
                 }
             }
             else -> {
-                Log.e(TAG, "Unexpected credential type")
+                Log.e(tag, "Unexpected credential type")
                 showError("Unexpected credential type")
                 //binding.progress.visibility = View.GONE
                 showLoading(false)
@@ -113,11 +121,11 @@ class LoginActivity : AppCompatActivity() {
     private fun handleSignInError(e: GetCredentialException) {
         when (e) {
             is NoCredentialException -> {
-                Log.d(TAG, "No credentials available")
+                Log.d(tag, "No credentials available")
                 showError("No Google accounts found. Please add a Google account to your device.")
             }
             else -> {
-                Log.e(TAG, "Sign-in failed", e)
+                Log.e(tag, "Sign-in failed", e)
                 showError("Sign-in failed: ${e.message}")
             }
         }
@@ -130,7 +138,7 @@ class LoginActivity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     handleSuccessfulSignIn()
                 } else {
-                    Log.e(TAG, "Firebase authentication failed", task.exception)
+                    Log.e(tag, "Firebase authentication failed", task.exception)
                     showError("Authentication failed")
                     //binding.progress.visibility = View.GONE
                     showLoading(false)
@@ -153,7 +161,7 @@ class LoginActivity : AppCompatActivity() {
                 "Signed in as: ${firebaseUser.displayName}",
                 Toast.LENGTH_SHORT
             ).show()
-            Log.d(TAG, "Sign-in success: ${firebaseUser.displayName}")
+            Log.d(tag, "Sign-in success: ${firebaseUser.displayName}")
 
             val db = MyRealtimeFirebase.getInstance()
             db.userExists { exists ->
@@ -164,7 +172,7 @@ class LoginActivity : AppCompatActivity() {
 
             navigateToMainActivity()
         } else {
-            Log.e(TAG, "Firebase user or email is null")
+            Log.e(tag, "Firebase user or email is null")
             showError("Login failed. User information is incomplete.")
         }
     }
@@ -198,6 +206,18 @@ class LoginActivity : AppCompatActivity() {
             v.animate().alpha(0f).setDuration(150).withEndAction {
                 v.visibility = View.GONE
             }.start()
+        }
+    }
+
+    /** Opens an external URL in the user's default browser */
+    private fun openExternalLink(url: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, R.string.unable_to_open_link, Toast.LENGTH_SHORT).show()
+            Log.e("Login", "Failed to open link: $url", e)
         }
     }
 }

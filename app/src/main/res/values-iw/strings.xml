@@ -77,4 +77,7 @@
     <string name="dot">•</string>
     <string name="calendar_select_limit_toast">ניתן לבחור עד %1$d יומנים לקבלת תזכורות.</string>
     <string name="login">התחברות</string>
+    <string name="terms_url">https://sites.google.com/view/smartreminder2025/terms</string>
+    <string name="privacy_url">https://sites.google.com/view/smartreminder2025/privacypolicy</string>
+    <string name="unable_to_open_link">לא ניתן לפתוח קישור.</string>
 </resources>

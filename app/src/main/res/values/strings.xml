@@ -46,7 +46,7 @@
     <string name="field_required">Field Required</string>
     <string name="failed_to_authenticate">Failed To Authenticate</string>
     <string name="action_failed_try_again">Action Failed Try Again</string>
-    <string name="failed_to_load_calendars">Faild To Load Calendars</string>
+    <string name="failed_to_load_calendars">Failed To Load Calendars</string>
     <string name="settings_saved">Settings Saved</string>
     <string name="loading_calendars">Loading Calendars…</string>
     <string name="permission_required">Permission Required</string>
@@ -77,4 +77,7 @@ You chose "Don’t allow". To continue, please enable Calendar permission in you
     <string name="dot">•</string>
     <string name="calendar_select_limit_toast">You can select up to %1$d calendars for reminders.</string>
     <string name="login">Login</string>
+    <string name="terms_url">https://sites.google.com/view/smartreminder2025/terms</string>
+    <string name="privacy_url">https://sites.google.com/view/smartreminder2025/privacypolicy</string>
+    <string name="unable_to_open_link">Unable to open link.</string>
 </resources>
