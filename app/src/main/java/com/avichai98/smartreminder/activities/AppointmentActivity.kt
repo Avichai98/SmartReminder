@@ -1,7 +1,6 @@
 package com.avichai98.smartreminder.activities
 
 import android.Manifest
-import android.accounts.Account
 import android.content.ContentResolver
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -30,7 +29,6 @@ import com.avichai98.smartreminder.models.Appointment
 import com.avichai98.smartreminder.models.GoogleCalendar
 import com.avichai98.smartreminder.models.GoogleCalendarEvent
 import com.avichai98.smartreminder.utils.DateTimeUtils
-import com.avichai98.smartreminder.utils.MyRealtimeFirebase
 import com.avichai98.smartreminder.utils.Utils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -118,6 +116,14 @@ class AppointmentActivity : AppCompatActivity() {
         eventsObserver = null
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (hasCalendarPermission() && selectedCalendarId.isNotEmpty() && selectedCalendarId != "primary") {
+            // Refresh events when returning from calendar app
+            fetchCalendarEvents()
+        }
+    }
+
     private fun showCreateCalendarDialog() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_create_calendar, null)
         val til = view.findViewById<TextInputLayout>(R.id.tilCalendarName)
@@ -177,16 +183,22 @@ class AppointmentActivity : AppCompatActivity() {
         calendarLauncher =
             registerForActivityResult(StartActivityForResult()) { result: ActivityResult ->
                 if (result.resultCode == RESULT_OK) {
-                    val account = Account(
-                        MyRealtimeFirebase.getInstance().getCurrentUserEmail(),
-                        "com.google"
-                    )
+                    val account = findAnyGoogleCalendarAccount()
+                    if (account == null) {
+                        Log.w(tag, "No Google Calendar account found locally; skipping manual sync.")
+                        return@registerForActivityResult
+                    }
+
                     val authority = "com.android.calendar"
                     val extras = Bundle().apply {
                         putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
                         putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
                     }
-                    ContentResolver.requestSync(account, authority, extras)
+                    try {
+                        ContentResolver.requestSync(account, authority, extras)
+                    } catch (t: Throwable) {
+                        Log.e(tag, "requestSync failed: ${t.localizedMessage}")
+                    }
                 }
             }
 
@@ -602,5 +614,27 @@ class AppointmentActivity : AppCompatActivity() {
         dialog.setCanceledOnTouchOutside(false)
         dialog.setCancelable(false)
         dialog.show()
+    }
+
+    private fun findAnyGoogleCalendarAccount(): android.accounts.Account? {
+        val projection = arrayOf(
+            CalendarContract.Calendars.ACCOUNT_NAME,
+            CalendarContract.Calendars.ACCOUNT_TYPE
+        )
+        val sel = "${CalendarContract.Calendars.ACCOUNT_TYPE}=?"
+        contentResolver.query(
+            CalendarContract.Calendars.CONTENT_URI,
+            projection,
+            sel,
+            arrayOf("com.google"),
+            null
+        )?.use { c ->
+            if (c.moveToFirst()) {
+                val name = c.getString(0) ?: return null
+                val type = c.getString(1) ?: return null
+                if (name.isNotBlank()) return android.accounts.Account(name, type)
+            }
+        }
+        return null
     }
 }
