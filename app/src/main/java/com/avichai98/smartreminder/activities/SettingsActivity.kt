@@ -85,10 +85,12 @@ class SettingsActivity : AppCompatActivity() {
             binding.loadingView.tvLoading.setText(R.string.loading_calendars)
             showLoading(true)
             try {
-                val (selectedCalendars, hoursBefore) =
-                    MyRealtimeFirebase.getInstance().fetchUserPreferencesSuspend()
-                previouslySelectedCalendars = selectedCalendars.toSet()
 
+                val (selectedCalendars, hoursBefore, selfReminder) =
+                    MyRealtimeFirebase.getInstance().fetchUserPreferencesSuspend()
+
+                binding.selfNotification.isChecked = selfReminder
+                previouslySelectedCalendars = selectedCalendars.toSet()
                 binding.npHoursBefore.apply {
                     minValue = 1
                     maxValue = 100
