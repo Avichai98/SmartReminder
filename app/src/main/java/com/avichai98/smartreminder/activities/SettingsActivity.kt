@@ -1,11 +1,17 @@
 package com.avichai98.smartreminder.activities
 
 import android.content.Intent
+import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
+import android.view.View
+import android.widget.EditText
+import android.widget.NumberPicker
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.avichai98.smartreminder.R
 import com.avichai98.smartreminder.adapters.CalendarAdapter
 import com.avichai98.smartreminder.databinding.ActivitySettingsBinding
 import com.avichai98.smartreminder.interfaces.GoogleCalendarApi
@@ -35,12 +41,30 @@ class SettingsActivity : AppCompatActivity() {
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val toolbar: com.google.android.material.appbar.MaterialToolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowHomeEnabled(true)
+        toolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+        toolbar.title = getString(R.string.settings)
+
         // Setup the RecyclerView
         binding.calendarRecyclerView.layoutManager = LinearLayoutManager(this)
 
         calendarAdapter = CalendarAdapter(
-            mutableListOf(),
-            mutableSetOf()
+            calendars = mutableListOf(),
+            selectedPositions = mutableSetOf(),
+            maxSelectable = 2, // <-- free plan: up to 2 calendars for reminders
+            onSelectionLimitReached = {
+                // Show a friendly message when user tries to select a 3rd calendar
+                Toast.makeText(
+                    this,
+                    getString(R.string.calendar_select_limit_toast, 2),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         )
         binding.calendarRecyclerView.adapter = calendarAdapter
 
@@ -58,34 +82,73 @@ class SettingsActivity : AppCompatActivity() {
     // Load minutesBefore and previously selected calendars from Firebase
     private fun loadSettings() {
         CoroutineScope(Dispatchers.Main).launch {
-            val (selectedCalendars, hoursBefore) =
-                MyRealtimeFirebase.getInstance().fetchUserPreferencesSuspend()
-            previouslySelectedCalendars = selectedCalendars.toSet()
-            binding.etHoursBefore.setText(hoursBefore.toString())
+            binding.loadingView.tvLoading.setText(R.string.loading_calendars)
+            showLoading(true)
+            try {
+
+                val (selectedCalendars, hoursBefore, selfReminder) =
+                    MyRealtimeFirebase.getInstance().fetchUserPreferencesSuspend()
+
+                binding.selfNotification.isChecked = selfReminder
+                previouslySelectedCalendars = selectedCalendars.toSet()
+                binding.npHoursBefore.apply {
+                    minValue = 1
+                    maxValue = 100
+                    wrapSelectorWheel = false
+                    setFormatter { v -> String.format(java.util.Locale.getDefault(), "%d", v) }
+
+                    val clamped = hoursBefore.coerceIn(minValue, maxValue)
+                    value = clamped
+                    post {
+                        value = clamped
+                        fixNumberPickerInput(this)
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, R.string.action_failed_try_again, Toast.LENGTH_SHORT).show()
+                Log.e("Settings", "loadSettings error: ${e.message}")
+            } finally {
+                showLoading(false)
+            }
+        }
+    }
+
+    @Suppress("DiscouragedApi")
+    private fun fixNumberPickerInput(np: NumberPicker) {
+        try {
+            val id = Resources.getSystem().getIdentifier("numberpicker_input", "id", "android")
+            val input = np.findViewById<EditText>(id) ?: return
+            input.textDirection = View.TEXT_DIRECTION_LOCALE
+            input.textAlignment = View.TEXT_ALIGNMENT_CENTER
+            input.gravity = Gravity.CENTER
+            input.minEms = 3
+            input.setHorizontallyScrolling(false)
+            input.setPadding(0, 0, 0, 0)
+        } catch (_: Exception) {
+            Log.e("Settings", "Error fixing number picker input")
         }
     }
 
     // Load available calendars from Google Calendar API
     private fun loadCalendars() {
         CoroutineScope(Dispatchers.Main).launch {
-            val accessToken = utils.fetchAccessToken(this@SettingsActivity)
-            if (accessToken == null) {
-                Toast.makeText(this@SettingsActivity, "Failed to fetch token", Toast.LENGTH_SHORT)
-                    .show()
-                return@launch
-            }
-
-            val calendarApi = Retrofit.Builder()
-                .baseUrl("https://www.googleapis.com/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-                .create(GoogleCalendarApi::class.java)
-
+            showLoading(true)
             try {
+                val accessToken = utils.fetchAccessToken(this@SettingsActivity)
+                if (accessToken == null) {
+                    Toast.makeText(this@SettingsActivity, R.string.failed_to_authenticate, Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                val calendarApi = Retrofit.Builder()
+                    .baseUrl("https://www.googleapis.com/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                    .create(GoogleCalendarApi::class.java)
+
                 val response = calendarApi.getCalendarList("Bearer $accessToken")
                 calendarItems.clear()
 
-                // Fill calendarItems list with calendar data
                 response.items.forEach { calendar ->
                     calendarItems.add(
                         CalendarItem(
@@ -96,41 +159,41 @@ class SettingsActivity : AppCompatActivity() {
                     )
                 }
 
-                // Display calendars in the RecyclerView
                 calendarAdapter.updateData(
                     calendarItems.map { it.summary },
-                    calendarItems.mapIndexedNotNull { index, item ->
-                        if (item.isSelected) index else null
-                    }.toSet()
+                    calendarItems.mapIndexedNotNull { index, item -> if (item.isSelected) index else null }.toSet()
                 )
-                binding.calendarRecyclerView.adapter = calendarAdapter
-
 
             } catch (e: Exception) {
-                Toast.makeText(
-                    this@SettingsActivity,
-                    "Failed to load calendars",
-                    Toast.LENGTH_SHORT
-                ).show()
-                Log.e("Settings", "Error loading calendars: ${e.message}")
+                Toast.makeText(this@SettingsActivity, R.string.failed_to_load_calendars, Toast.LENGTH_SHORT).show()
+                Log.e("Settings", "loadCalendars error: ${e.message}")
+            } finally {
+                showLoading(false)
             }
         }
     }
 
     // Save selected settings to Firebase
     private fun saveSettings() {
-        val hoursBefore = binding.etHoursBefore.text.toString().toIntOrNull() ?: 24
-        val selfReminder = binding.selfNotification.isChecked
+        showLoading(true)
+        try {
+            val hoursBefore = binding.npHoursBefore.value.coerceIn(1, 100)
+            val selfReminder = binding.selfNotification.isChecked
 
-        val selectedCalendarIds = mutableListOf<String>()
-        calendarAdapter.getSelectedPositions().forEach { pos ->
-            selectedCalendarIds.add(calendarItems[pos].id)
+            val selectedCalendarIds = mutableListOf<String>()
+            calendarAdapter.getSelectedPositions().forEach { pos ->
+                selectedCalendarIds.add(calendarItems[pos].id)
+            }
+
+            MyRealtimeFirebase.getInstance()
+                .updatePreferences(selectedCalendarIds, hoursBefore, selfReminder)
+
+            Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show()
+        } finally {
+            showLoading(false)
         }
-
-        MyRealtimeFirebase.getInstance()
-            .updatePreferences(selectedCalendarIds, hoursBefore, selfReminder)
-        Toast.makeText(this, "Settings saved", Toast.LENGTH_SHORT).show()
     }
+
 
     private fun logout() {
         firebaseAuth = FirebaseAuth.getInstance()
@@ -140,6 +203,19 @@ class SettingsActivity : AppCompatActivity() {
             MyRealtimeFirebase.resetInstance()
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
+        }
+    }
+
+    private fun showLoading(show: Boolean) {
+        val v = binding.loadingView.root
+        if (show) {
+            v.alpha = 0f
+            v.visibility = View.VISIBLE
+            v.animate().alpha(1f).setDuration(150).start()
+        } else {
+            v.animate().alpha(0f).setDuration(150).withEndAction {
+                v.visibility = View.GONE
+            }.start()
         }
     }
 }

@@ -133,7 +133,7 @@ class AppointmentReminderService : Service() {
                         continue
 
 
-                    val title = event.summary ?: "No title"
+                    val title = event.summary ?: continue
                     val time = event.start.dateTime ?: continue
                     val attendees = event.attendees?.mapNotNull { it.email } ?: emptyList()
 

@@ -30,6 +30,8 @@ interface GoogleCalendarApi {
         @Query("orderBy") orderBy: String = "startTime",
         @Query("singleEvents") singleEvents: Boolean = true,
         @Query("timeMin") timeMin: String,
-        @Query("timeMax") timeMax: String? = null
+        @Query("timeMax") timeMax: String? = null,
+        @Query("fields") fields: String =
+            "items(id,iCalUID,summary,description,location,start(dateTime,date),end(dateTime,date),organizer,attendees)"
     ): GoogleCalendarResponse
 }

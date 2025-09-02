@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
 val localProperties = Properties().apply {
@@ -8,6 +9,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.google.gms.google.services)
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -42,8 +44,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
+
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
     }
 
     buildFeatures {
@@ -100,4 +105,9 @@ dependencies {
     implementation(libs.android.activation) // Activation framework
 
     implementation(libs.dotenv.kotlin)
+
+    implementation(libs.androidx.work.runtime.ktx)
+
+    // Add the dependencies for the Crashlytics NDK
+    implementation(libs.firebase.crashlytics.ndk)
 }

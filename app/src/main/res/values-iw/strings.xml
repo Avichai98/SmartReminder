@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SmartReminder</string>
-    <string name="loading_appointments">טוען פגישות...</string>
+    <string name="loading_appointments">טוען פגישות…</string>
     <string name="no_appointments_available">לא קיימים אירועים</string>
     <string name="update">עדכן</string>
     <string name="delete">מחיקה</string>
@@ -40,4 +40,44 @@
     <string name="organizer">מארגן</string>
     <string name="attendees">משתתפים</string>
     <string name="logout">התנתק</string>
+    <string name="organizer_me">מארגן: אני</string>
+    <string name="no_appointments">אין פגישות</string>
+    <string name="appointments">פגישות</string>
+    <string name="field_required">שדה נדרש</string>
+    <string name="failed_to_authenticate">אימות נכשל</string>
+    <string name="action_failed_try_again">ניסיון נכשל, נסה שוב במועד מאוחר יותר</string>
+    <string name="failed_to_load_calendars">שגיאה בטעינת היומנים</string>
+    <string name="settings_saved">הגדרות נשמרו</string>
+    <string name="loading_calendars">טוען יומנים…</string>
+    <string name="permission_required">נדרשת הרשאה</string>
+    <string name="calendar_permission_rationale">הסבר הרשאת לוח שנה</string>
+    <string name="calendar_permission_title">נדרשת הרשאה ליומן</string>
+    <string name="calendar_permission_message">
+כדי לפתוח ולערוך את האירוע באפליקציית היומן שלך, האפליקציה צריכה גישה לקריאה ליומן במכשיר. אנחנו לא משנים את היומן שלך ללא פעולה יזומה, ותמיד אפשר לשנות זאת בהגדרות.
+</string>
+    <string name="open_settings_title">ההרשאה נדחתה</string>
+    <string name="open_settings_message">
+בחרת "אל תאפשר". כדי להמשיך, אפשר את הרשאת היומן בהגדרות המכשיר.
+</string>
+    <string name="ok">אישור</string>
+    <string name="organizer_colon_value">מארגן: %1$s</string>
+    <string name="attendees_colon_value">משתתפים: %1$s</string>
+    <string name="location_colon_value">מיקום: %1$s</string>
+    <string name="duration_minutes_format">משך: %1$d דקות</string>
+    <string name="datetime_format">%1$s | %2$s</string>
+    <string name="app_logo">לוגו האפליקציה</string>
+    <string name="login_headline">אל תפספס פגישות יותר</string>
+    <string name="login_subhead">תזכורות חכמות שמסונכרנות עם יומן גוגל</string>
+    <string name="benefit_sync">סנכרון חלק עם יומן גוגל</string>
+    <string name="benefit_reminders">תזכורות חכמות לפגישות שלך</string>
+    <string name="benefit_privacy">המידע שלך לא משותף</string>
+    <string name="login_privacy_note">אנחנו משתמשים ביומן גוגל שלך רק כדי לקרוא אירועים קרובים ולשלוח תזכורות. שום דבר לא משותף.</string>
+    <string name="terms">תנאים</string>
+    <string name="privacy">פרטיות</string>
+    <string name="dot">•</string>
+    <string name="calendar_select_limit_toast">ניתן לבחור עד %1$d יומנים לקבלת תזכורות.</string>
+    <string name="login">התחברות</string>
+    <string name="terms_url">https://sites.google.com/view/smartreminder2025/terms</string>
+    <string name="privacy_url">https://sites.google.com/view/smartreminder2025/privacypolicy</string>
+    <string name="unable_to_open_link">לא ניתן לפתוח קישור.</string>
 </resources>

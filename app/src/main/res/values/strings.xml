@@ -5,7 +5,7 @@
     <string name="save_settings">Save Settings</string>
     <string name="e_g_24">e.g. 24</string>
     <string name="hours_before_notification">Hours before notification:</string>
-    <string name="loading_appointments">Loading appointments...</string>
+    <string name="loading_appointments">Loading appointments…</string>
     <string name="no_appointments_available">No appointments available</string>
     <string name="update">Update</string>
     <string name="delete">Delete</string>
@@ -40,4 +40,44 @@
     <string name="organizer">Organizer</string>
     <string name="attendees">Attendees</string>
     <string name="logout">Logout</string>
+    <string name="organizer_me">Organizer: me</string>
+    <string name="no_appointments">No Appointments</string>
+    <string name="appointments">Appointments</string>
+    <string name="field_required">Field Required</string>
+    <string name="failed_to_authenticate">Failed To Authenticate</string>
+    <string name="action_failed_try_again">Action Failed Try Again</string>
+    <string name="failed_to_load_calendars">Failed To Load Calendars</string>
+    <string name="settings_saved">Settings Saved</string>
+    <string name="loading_calendars">Loading Calendars…</string>
+    <string name="permission_required">Permission Required</string>
+    <string name="calendar_permission_rationale">Calendar Permission Rationale</string>
+    <string name="calendar_permission_title">Calendar access required</string>
+    <string name="calendar_permission_message">
+To open and edit this event in your Calendar app, the app needs read access to your device calendar. We never modify your calendar without you, and you can change this anytime in Settings.
+</string>
+    <string name="open_settings_title">Permission denied</string>
+    <string name="open_settings_message">
+You chose "Don’t allow". To continue, please enable Calendar permission in your device settings.
+</string>
+    <string name="ok">OK</string>
+    <string name="organizer_colon_value">Organizer: %1$s</string>
+    <string name="attendees_colon_value">Attendees: %1$s</string>
+    <string name="location_colon_value">Location: %1$s</string>
+    <string name="duration_minutes_format">Duration: %1$d minutes</string>
+    <string name="datetime_format">%1$s | %2$s</string>
+    <string name="app_logo">App logo</string>
+    <string name="login_headline">Never miss a meeting again</string>
+    <string name="login_subhead">Smart reminders synced with your Google Calendar</string>
+    <string name="benefit_sync">Seamless sync with Google Calendar</string>
+    <string name="benefit_reminders">Smart reminders for you and attendees</string>
+    <string name="benefit_privacy">Your data stays private</string>
+    <string name="login_privacy_note">We use your Google Calendar only to read upcoming events and send reminders. Nothing is shared.</string>
+    <string name="terms">Terms</string>
+    <string name="privacy">Privacy</string>
+    <string name="dot">•</string>
+    <string name="calendar_select_limit_toast">You can select up to %1$d calendars for reminders.</string>
+    <string name="login">Login</string>
+    <string name="terms_url">https://sites.google.com/view/smartreminder2025/terms</string>
+    <string name="privacy_url">https://sites.google.com/view/smartreminder2025/privacypolicy</string>
+    <string name="unable_to_open_link">Unable to open link.</string>
 </resources>

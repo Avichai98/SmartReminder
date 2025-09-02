@@ -6,11 +6,14 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.avichai98.smartreminder.R
+import com.avichai98.smartreminder.formatters.AppointmentFormatter
 import com.avichai98.smartreminder.models.Appointment
 
 class AppointmentAdapter(
     private val appointments: MutableList<Appointment>,
 ) : RecyclerView.Adapter<AppointmentAdapter.AppointmentViewHolder>() {
+
+    var onItemClick: ((Appointment) -> Unit)? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppointmentViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_appointment_card, parent, false)
@@ -20,6 +23,7 @@ class AppointmentAdapter(
     override fun onBindViewHolder(holder: AppointmentViewHolder, position: Int) {
         val appointment = appointments[position]
         holder.bind(appointment)
+        holder.itemView.setOnClickListener { onItemClick?.invoke(appointment) }
     }
 
     override fun getItemCount() = appointments.size
@@ -36,13 +40,31 @@ class AppointmentAdapter(
             val ctx = itemView.context
 
             titleView.text = appointment.summary
-            organizerView.text = "${ctx.getString(R.string.organizer)}: ${appointment.organizer?.displayName ?: "Unknown"}"
-            dateTimeView.text = "${appointment.getStartDate()} | ${appointment.getStartTime()}"
-            attendeesView.text = "${ctx.getString(R.string.attendees)}: ${appointment.getAttendeeEmails()}"
-            val locationText = appointment.location ?: ctx.getString(R.string.location_not_defined)
-            locationView.text = "${ctx.getString(R.string.location)}: $locationText"
-            durationView.text = "${ctx.getString(R.string.duration)}: ${appointment.getDurationMinutes()} ${ctx.getString(R.string.minutes)}"
+            organizerView.text = ctx.getString(
+                R.string.organizer_colon_value,
+                appointment.organizer?.displayName ?: appointment.organizer?.email ?: ""
+            )
 
+            dateTimeView.text = ctx.getString(
+                R.string.datetime_format,
+                AppointmentFormatter.localizedStartDate(ctx, appointment),
+                AppointmentFormatter.localizedStartTime(ctx, appointment)
+            )
+
+            attendeesView.text = ctx.getString(
+                R.string.attendees_colon_value,
+                appointment.getAttendeeEmails()
+            )
+
+            locationView.text = ctx.getString(
+                R.string.location_colon_value,
+                appointment.location.orEmpty()
+            )
+
+            durationView.text = ctx.getString(
+                R.string.duration_minutes_format,
+                appointment.getDurationMinutes()
+            )
         }
     }
 }
